@@ -14,6 +14,8 @@ export const exposedModules: ConsolePluginBuildMetadata['exposedModules'] = {
     './views/virtualmachines/actions/hooks/useVirtualMachineActionsProvider.ts',
   VirtualMachineNavPage: './views/virtualmachines/details/VirtualMachineNavPage.tsx',
   VirtualMachinesList: './views/virtualmachines/list/VirtualMachinesList.tsx',
+  VirtualMachinesOverviewTab:
+    './views/virtualmachines/details/tabs/overview/VirtualMachinesOverviewTab.tsx',
 };
 
 export const extensions: EncodedExtension[] = [
@@ -54,6 +56,12 @@ export const extensions: EncodedExtension[] = [
     },
     type: 'console.page/resource/details',
   } as EncodedExtension<ResourceDetailsPage>,
+  {
+    properties: {
+      component: { $codeRef: 'VirtualMachinesOverviewTab' },
+    },
+    type: 'acm.search/details',
+  },
   {
     properties: {
       component: {
