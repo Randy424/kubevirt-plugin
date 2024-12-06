@@ -14,10 +14,10 @@ import { VirtualMachineDetailsTab } from '@kubevirt-utils/constants/tabs-constan
 import { useKubevirtTranslation } from '@kubevirt-utils/hooks/useKubevirtTranslation';
 import { getLabel, getName, getVMStatus } from '@kubevirt-utils/resources/shared';
 import { getInstanceTypeMatcher, getMachineType } from '@kubevirt-utils/resources/vm';
+import { useOpenShiftConsoleDynamicPluginSDK } from '@kubevirt-utils/resources/vm/hooks/useOpenShiftConsoleDynamicPluginSDK';
 import { NO_DATA_DASH } from '@kubevirt-utils/resources/vm/utils/constants';
 import { getOsNameFromGuestAgent } from '@kubevirt-utils/resources/vmi';
 import { isEmpty } from '@kubevirt-utils/utils/utils';
-import { Timestamp } from '@openshift-console/dynamic-plugin-sdk';
 import {
   Card,
   CardBody,
@@ -70,6 +70,8 @@ const VirtualMachinesOverviewTabDetails: FC<VirtualMachinesOverviewTabDetailsPro
     new Date(Date.now()),
     true,
   );
+
+  const { Timestamp } = useOpenShiftConsoleDynamicPluginSDK();
 
   const timestampPluralized = pluralize(timestamp['value'], timestamp['time']);
 
