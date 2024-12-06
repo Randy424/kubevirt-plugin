@@ -7,6 +7,7 @@ import {
 import type { ConsolePluginBuildMetadata } from '@openshift-console/dynamic-plugin-sdk-webpack';
 
 export const exposedModules: ConsolePluginBuildMetadata['exposedModules'] = {
+  KubevirtPluginContext: './utils/contexts/KubevirtPluginContext.ts',
   LogsStandAlone:
     './views/virtualmachines/details/tabs/diagnostic/VirtualMachineLogViewer/VirtualMachineLogViewerStandAlone/VirtualMachineLogViewerStandAlone.tsx',
   Navigator: './views/virtualmachines/navigator/VirtualMachineNavigator.tsx',
@@ -48,6 +49,12 @@ export const extensions: EncodedExtension[] = [
       component: { $codeRef: 'VirtualMachinesOverviewTab' },
     },
     type: 'acm.search/details',
+  },
+  {
+    properties: {
+      context: { $codeRef: 'KubevirtPluginContext' },
+    },
+    type: 'acm.kubevirt-context',
   },
   {
     properties: {
