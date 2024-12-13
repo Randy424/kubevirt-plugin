@@ -1,7 +1,8 @@
 import { modelToGroupVersionKind, PodModel } from '@kubevirt-ui/kubevirt-api/console';
 import { V1VirtualMachineInstance } from '@kubevirt-ui/kubevirt-api/kubevirt';
+import { useOpenShiftConsoleDynamicPluginSDK } from '@kubevirt-utils/hooks/useOpenShiftConsoleDynamicPluginSDK';
 import useVMI from '@kubevirt-utils/resources/vm/hooks/useVMI';
-import { K8sResourceCommon, useK8sWatchResource } from '@openshift-console/dynamic-plugin-sdk';
+import { K8sResourceCommon } from '@openshift-console/dynamic-plugin-sdk';
 
 type UseVMIAndPodsForVMValues = {
   error: any;
@@ -14,6 +15,7 @@ export const useVMIAndPodsForVM = (
   vmName: string,
   vmNamespace: string,
 ): UseVMIAndPodsForVMValues => {
+  const { useK8sWatchResource } = useOpenShiftConsoleDynamicPluginSDK();
   const { vmi, vmiLoaded, vmiLoadError } = useVMI(vmName, vmNamespace);
 
   const [pods, podsLoaded, podsLoadError] = useK8sWatchResource<K8sResourceCommon[]>({
