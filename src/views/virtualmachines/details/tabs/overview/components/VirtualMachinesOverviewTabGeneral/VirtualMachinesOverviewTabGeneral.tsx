@@ -12,6 +12,7 @@ import OwnerDetailsItem from '@kubevirt-utils/components/OwnerDetailsItem/OwnerD
 import VirtualMachineDescriptionItem from '@kubevirt-utils/components/VirtualMachineDescriptionItem/VirtualMachineDescriptionItem';
 import { useKubevirtTranslation } from '@kubevirt-utils/hooks/useKubevirtTranslation';
 import { getName, getNamespace } from '@kubevirt-utils/resources/shared';
+import { useDynamicPluginSharedComponents } from '@kubevirt-utils/resources/vm/hooks/useDynamicPluginSharedComponents';
 import { NO_DATA_DASH } from '@kubevirt-utils/resources/vm/utils/constants';
 import { getVMIPod } from '@kubevirt-utils/resources/vmi';
 import {
@@ -36,12 +37,25 @@ const VirtualMachinesOverviewTabGeneral: FC<VirtualMachinesOverviewTabGeneralPro
   vmi,
 }) => {
   const { t } = useKubevirtTranslation();
+  const { SearchDetailsNamespaceLink } = useDynamicPluginSharedComponents();
   const [canGetNode] = useAccessReview({
     namespace: vm?.metadata?.namespace,
     resource: NodeModel.plural,
     verb: 'get' as K8sVerb,
   });
   const pod = getVMIPod(vmi, pods);
+
+  const ResourceLinkWrapper = () => {
+    if (SearchDetailsNamespaceLink) {
+      return SearchDetailsNamespaceLink;
+    }
+    return (
+      <ResourceLink
+        groupVersionKind={modelToGroupVersionKind(NamespaceModel)}
+        name={vm?.metadata?.namespace}
+      />
+    );
+  };
 
   return (
     <div className="VirtualMachinesOverviewTabGeneral--main">
@@ -54,13 +68,8 @@ const VirtualMachinesOverviewTabGeneral: FC<VirtualMachinesOverviewTabGeneralPro
               bodyContent={t(
                 'Namespace defines the space within which each name must be unique. An empty namespace is equivalent to the "default" namespace, but "default" is the canonical representation. Not all objects are required to be scoped to a namespace - the value of this field for those objects will be empty. Must be a DNS_LABEL. Cannot be updated. ',
               )}
-              descriptionData={
-                <ResourceLink
-                  groupVersionKind={modelToGroupVersionKind(NamespaceModel)}
-                  name={vm?.metadata?.namespace}
-                />
-              }
               breadcrumb="VirtualMachine.metadata.namespace"
+              descriptionData={ResourceLinkWrapper()}
               descriptionHeader={t('Namespace')}
               isPopover
               moreInfoURL="http://kubernetes.io/docs/user-guide/namespaces"
