@@ -12,15 +12,11 @@ import OwnerDetailsItem from '@kubevirt-utils/components/OwnerDetailsItem/OwnerD
 import VirtualMachineDescriptionItem from '@kubevirt-utils/components/VirtualMachineDescriptionItem/VirtualMachineDescriptionItem';
 import { documentationURL } from '@kubevirt-utils/constants/documentation';
 import { useKubevirtTranslation } from '@kubevirt-utils/hooks/useKubevirtTranslation';
+import { useOpenShiftConsoleDynamicPluginSDK } from '@kubevirt-utils/hooks/useOpenShiftConsoleDynamicPluginSDK';
 import { getName, getNamespace } from '@kubevirt-utils/resources/shared';
 import { NO_DATA_DASH } from '@kubevirt-utils/resources/vm/utils/constants';
 import { getVMIPod } from '@kubevirt-utils/resources/vmi';
-import {
-  K8sResourceCommon,
-  K8sVerb,
-  ResourceLink,
-  useAccessReview,
-} from '@openshift-console/dynamic-plugin-sdk';
+import { K8sResourceCommon, K8sVerb, useAccessReview } from '@openshift-console/dynamic-plugin-sdk';
 import { Card, CardBody, CardTitle, DescriptionList, Divider } from '@patternfly/react-core';
 
 import './virtual-machines-overview-tab-general.scss';
@@ -43,6 +39,7 @@ const VirtualMachinesOverviewTabGeneral: FC<VirtualMachinesOverviewTabGeneralPro
     verb: 'get' as K8sVerb,
   });
   const pod = getVMIPod(vmi, pods);
+  const { ResourceLink } = useOpenShiftConsoleDynamicPluginSDK();
 
   return (
     <div className="VirtualMachinesOverviewTabGeneral--main">

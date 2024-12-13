@@ -1,6 +1,6 @@
 import { VirtualMachineInstanceModelGroupVersionKind } from '@kubevirt-ui/kubevirt-api/console';
 import { V1VirtualMachineInstance } from '@kubevirt-ui/kubevirt-api/kubevirt';
-import { useK8sWatchResource } from '@openshift-console/dynamic-plugin-sdk';
+import { useOpenShiftConsoleDynamicPluginSDK } from '@kubevirt-utils/hooks/useOpenShiftConsoleDynamicPluginSDK';
 
 type UseVMI = (
   vmName: string,
@@ -13,6 +13,7 @@ type UseVMI = (
 };
 
 const useVMI: UseVMI = (vmName, vmNamespace, fetch = true) => {
+  const { useK8sWatchResource } = useOpenShiftConsoleDynamicPluginSDK();
   const [vmi, vmiLoaded, vmiLoadError] = useK8sWatchResource<V1VirtualMachineInstance>(
     fetch && {
       groupVersionKind: VirtualMachineInstanceModelGroupVersionKind,
