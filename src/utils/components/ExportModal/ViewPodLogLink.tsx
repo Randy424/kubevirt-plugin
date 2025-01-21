@@ -3,7 +3,7 @@ import React, { FC } from 'react';
 import { IoK8sApiCoreV1Pod } from '@kubevirt-ui/kubevirt-api/kubernetes';
 import { useKubevirtTranslation } from '@kubevirt-utils/hooks/useKubevirtTranslation';
 import { PodModel } from '@kubevirt-utils/models';
-import { getResourceUrl } from '@kubevirt-utils/resources/shared';
+import { getResourceUrl } from '@kubevirt-utils/utils/getResourceUrl';
 import { isEmpty } from '@kubevirt-utils/utils/utils';
 
 import ExternalLink from '../ExternalLink/ExternalLink';

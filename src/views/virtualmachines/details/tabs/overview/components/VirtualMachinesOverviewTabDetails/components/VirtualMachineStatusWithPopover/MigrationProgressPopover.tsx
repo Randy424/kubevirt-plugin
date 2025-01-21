@@ -7,8 +7,8 @@ import { V1VirtualMachineInstance } from '@kubevirt-ui/kubevirt-api/kubevirt';
 import MutedTextSpan from '@kubevirt-utils/components/MutedTextSpan/MutedTextSpan';
 import { dateTimeFormatter } from '@kubevirt-utils/components/Timestamp/utils/datetime';
 import { useKubevirtTranslation } from '@kubevirt-utils/hooks/useKubevirtTranslation';
-import { getResourceUrl } from '@kubevirt-utils/resources/shared';
 import useVirtualMachineInstanceMigration from '@kubevirt-utils/resources/vmi/hooks/useVirtualMachineInstanceMigration';
+import { getResourceUrl } from '@kubevirt-utils/utils/getResourceUrl';
 import { ResourceLink } from '@openshift-console/dynamic-plugin-sdk';
 import { Popover, PopoverPosition, Stack, StackItem } from '@patternfly/react-core';
 

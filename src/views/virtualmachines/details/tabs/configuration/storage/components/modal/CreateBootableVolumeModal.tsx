@@ -23,11 +23,12 @@ import TabModal from '@kubevirt-utils/components/TabModal/TabModal';
 import { useKubevirtTranslation } from '@kubevirt-utils/hooks/useKubevirtTranslation';
 import useStorageProfileClaimPropertySets from '@kubevirt-utils/hooks/useStorageProfileClaimPropertySets';
 import { modelToGroupVersionKind, PersistentVolumeClaimModel } from '@kubevirt-utils/models';
-import { getName, getNamespace, getResourceUrl } from '@kubevirt-utils/resources/shared';
+import { getName, getNamespace } from '@kubevirt-utils/resources/shared';
 import { getInstanceTypeMatcher, getPreferenceMatcher } from '@kubevirt-utils/resources/vm';
 import { NO_DATA_DASH } from '@kubevirt-utils/resources/vm/utils/constants';
 import { DiskRowDataLayout } from '@kubevirt-utils/resources/vm/utils/disk/constants';
 import { hasSizeUnit } from '@kubevirt-utils/resources/vm/utils/disk/size';
+import { getResourceUrl } from '@kubevirt-utils/utils/getResourceUrl';
 import { useK8sWatchResource } from '@openshift-console/dynamic-plugin-sdk';
 import { PopoverPosition, Stack, Title } from '@patternfly/react-core';
 

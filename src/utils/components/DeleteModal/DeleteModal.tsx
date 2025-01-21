@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom-v5-compat';
 
 import TabModal from '@kubevirt-utils/components/TabModal/TabModal';
 import { useKubevirtTranslation } from '@kubevirt-utils/hooks/useKubevirtTranslation';
-import { getResourceUrl } from '@kubevirt-utils/resources/shared';
+import { getResourceUrl } from '@kubevirt-utils/utils/getResourceUrl';
 import {
   getGroupVersionKindForResource,
   K8sResourceCommon,
