@@ -28,10 +28,10 @@ import {
 import { ALL_NAMESPACES_SESSION_KEY } from '@kubevirt-utils/hooks/constants';
 import { useKubevirtTranslation } from '@kubevirt-utils/hooks/useKubevirtTranslation';
 import useKubevirtUserSettings from '@kubevirt-utils/hooks/useKubevirtUserSettings/useKubevirtUserSettings';
-import { getResourceUrl } from '@kubevirt-utils/resources/shared';
 import useNamespaceUDN from '@kubevirt-utils/resources/udn/hooks/useNamespaceUDN';
 import { useDriversImage } from '@kubevirt-utils/resources/vm/utils/disk/useDriversImage';
 import { vmSignal } from '@kubevirt-utils/store/customizeInstanceType';
+import { getResourceUrl } from '@kubevirt-utils/utils/getResourceUrl';
 import { createHeadlessService } from '@kubevirt-utils/utils/headless-service';
 import { isEmpty } from '@kubevirt-utils/utils/utils';
 import { k8sCreate } from '@openshift-console/dynamic-plugin-sdk';

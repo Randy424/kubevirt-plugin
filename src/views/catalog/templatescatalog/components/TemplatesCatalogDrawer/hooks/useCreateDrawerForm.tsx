@@ -38,7 +38,7 @@ import { useFeatures } from '@kubevirt-utils/hooks/useFeatures/useFeatures';
 import useKubevirtUserSettings from '@kubevirt-utils/hooks/useKubevirtUserSettings/useKubevirtUserSettings';
 import { RHELAutomaticSubscriptionData } from '@kubevirt-utils/hooks/useRHELAutomaticSubscription/utils/types';
 import { createSecret, encodeSecretKey } from '@kubevirt-utils/resources/secret/utils';
-import { getAnnotation, getLabel, getResourceUrl } from '@kubevirt-utils/resources/shared';
+import { getAnnotation, getLabel } from '@kubevirt-utils/resources/shared';
 import {
   ANNOTATIONS,
   bootDiskSourceIsRegistry,
@@ -53,6 +53,7 @@ import {
   DEFAULT_NETWORK_INTERFACE,
   UDN_BINDING_NAME,
 } from '@kubevirt-utils/resources/vm/utils/constants';
+import { getResourceUrl } from '@kubevirt-utils/utils/getResourceUrl';
 import {
   HEADLESS_SERVICE_LABEL,
   HEADLESS_SERVICE_NAME,

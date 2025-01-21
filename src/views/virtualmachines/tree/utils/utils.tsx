@@ -3,7 +3,8 @@ import { VirtualMachineModel } from 'src/views/dashboard-extensions/utils';
 
 import { V1VirtualMachine } from '@kubevirt-ui/kubevirt-api/kubevirt';
 import { ALL_NAMESPACES_SESSION_KEY, ALL_PROJECTS } from '@kubevirt-utils/hooks/constants';
-import { getLabel, getName, getNamespace, getResourceUrl } from '@kubevirt-utils/resources/shared';
+import { getLabel, getName, getNamespace } from '@kubevirt-utils/resources/shared';
+import { GetResourceUrl } from '@kubevirt-utils/utils/getResourceUrl';
 import { TreeViewDataItem } from '@patternfly/react-core';
 import { FolderIcon, FolderOpenIcon, ProjectDiagramIcon } from '@patternfly/react-icons';
 import { signal } from '@preact/signals-react';
@@ -24,6 +25,7 @@ export interface TreeViewDataItemWithHref extends TreeViewDataItem {
 }
 
 const buildProjectMap = (
+  getResourceUrl: GetResourceUrl,
   vms: V1VirtualMachine[],
   currentPageVMName: string,
   currentVMTab: string,
@@ -81,6 +83,7 @@ const buildProjectMap = (
 };
 
 const createFolderTreeItems = (
+  getResourceUrl: GetResourceUrl,
   folders: Record<string, TreeViewDataItemWithHref[]>,
   project: string,
   currentPageVMName: string,
@@ -112,6 +115,7 @@ const createFolderTreeItems = (
   });
 
 const createProjectTreeItem = (
+  getResourceUrl: GetResourceUrl,
   project: string,
   projectMap: Record<string, any>,
   currentPageVMName: string,
@@ -119,6 +123,7 @@ const createProjectTreeItem = (
   treeViewDataMap: Record<string, TreeViewDataItemWithHref>,
 ): TreeViewDataItemWithHref => {
   const projectFolders = createFolderTreeItems(
+    getResourceUrl,
     projectMap[project]?.folders || {},
     project,
     currentPageVMName,
@@ -149,6 +154,7 @@ const createProjectTreeItem = (
 };
 
 const createAllNamespacesTreeItem = (
+  getResourceUrl: GetResourceUrl,
   treeViewData: TreeViewDataItemWithHref[],
   treeViewDataMap: Record<string, TreeViewDataItemWithHref>,
   projectMap: Record<string, any>,
@@ -186,6 +192,7 @@ const getVMInfoFromPathname = (pathname: string) => {
 };
 
 export const createTreeViewData = (
+  getResourceUrl: GetResourceUrl,
   projectNames: string[],
   vms: V1VirtualMachine[],
   isAdmin: boolean,
@@ -195,14 +202,28 @@ export const createTreeViewData = (
   const { currentVMTab, vmName, vmNamespace } = getVMInfoFromPathname(pathname);
 
   const treeViewDataMap: Record<string, TreeViewDataItem> = {};
-  const projectMap = buildProjectMap(vms, vmName, currentVMTab, treeViewDataMap, foldersEnabled);
+  const projectMap = buildProjectMap(
+    getResourceUrl,
+    vms,
+    vmName,
+    currentVMTab,
+    treeViewDataMap,
+    foldersEnabled,
+  );
 
   const treeViewData = projectNames.map((project) =>
-    createProjectTreeItem(project, projectMap, vmName, vmNamespace, treeViewDataMap),
+    createProjectTreeItem(
+      getResourceUrl,
+      project,
+      projectMap,
+      vmName,
+      vmNamespace,
+      treeViewDataMap,
+    ),
   );
 
   const allNamespacesTreeItem = isAdmin
-    ? createAllNamespacesTreeItem(treeViewData, treeViewDataMap, projectMap)
+    ? createAllNamespacesTreeItem(getResourceUrl, treeViewData, treeViewDataMap, projectMap)
     : null;
 
   treeDataMap.value = treeViewDataMap;

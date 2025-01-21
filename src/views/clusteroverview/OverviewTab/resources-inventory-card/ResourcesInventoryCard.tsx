@@ -5,7 +5,7 @@ import NetworkAttachmentDefinitionModel from '@kubevirt-ui/kubevirt-api/console/
 import VirtualMachineModel from '@kubevirt-ui/kubevirt-api/console/models/VirtualMachineModel';
 import { useIsAdmin } from '@kubevirt-utils/hooks/useIsAdmin';
 import { useKubevirtTranslation } from '@kubevirt-utils/hooks/useKubevirtTranslation';
-import { getResourceUrl } from '@kubevirt-utils/resources/shared';
+import { getResourceUrl } from '@kubevirt-utils/utils/getResourceUrl';
 import { useActiveNamespace } from '@openshift-console/dynamic-plugin-sdk';
 import { Card, Grid, GridItem } from '@patternfly/react-core';
 

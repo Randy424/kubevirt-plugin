@@ -4,7 +4,6 @@ import {
   V1beta1DataSource,
 } from '@kubevirt-ui/kubevirt-api/containerized-data-importer/models';
 import { V1alpha1Condition, V1VirtualMachine } from '@kubevirt-ui/kubevirt-api/kubevirt';
-import { ALL_NAMESPACES_SESSION_KEY } from '@kubevirt-utils/hooks/constants';
 import { TemplateModel } from '@kubevirt-utils/models';
 import {
   AccessReviewResourceAttributes,
@@ -48,34 +47,6 @@ export const getAnnotation = (
  */
 export const getLabel = (entity: K8sResourceCommon, label: string, defaultValue?: string): string =>
   entity?.metadata?.labels?.[label] ?? defaultValue;
-
-type ResourceUrlProps = {
-  activeNamespace?: string;
-  model: K8sModel;
-  resource?: K8sResourceCommon;
-};
-
-/**
- * function for getting a resource URL
- * @param {ResourceUrlProps} urlProps - object with model, resource to get the URL from (optional) and active namespace/project name (optional)
- * @returns {string} the URL for the resource
- */
-export const getResourceUrl = (urlProps: ResourceUrlProps): string => {
-  const { activeNamespace, model, resource } = urlProps;
-
-  if (!model) return null;
-  const { crd, namespaced, plural } = model;
-
-  const namespace =
-    resource?.metadata?.namespace ||
-    (activeNamespace !== ALL_NAMESPACES_SESSION_KEY && activeNamespace);
-  const namespaceUrl = namespace ? `ns/${namespace}` : 'all-namespaces';
-
-  const ref = crd ? `${model.apiGroup || 'core'}~${model.apiVersion}~${model.kind}` : plural || '';
-  const name = resource?.metadata?.name || '';
-
-  return `/k8s/${namespaced ? namespaceUrl : 'cluster'}/${ref}/${name}`;
-};
 
 /**
  * function for getting a condition's reason
