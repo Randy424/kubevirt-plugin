@@ -11,6 +11,7 @@ import {
 } from '@kubevirt-ui/kubevirt-api/kubevirt';
 import { TREE_VIEW_FOLDERS } from '@kubevirt-utils/hooks/useFeatures/constants';
 import { useFeatures } from '@kubevirt-utils/hooks/useFeatures/useFeatures';
+import { useGetResourceUrl } from '@kubevirt-utils/hooks/useGetResourceUrl';
 import { useIsAdmin } from '@kubevirt-utils/hooks/useIsAdmin';
 import useKubevirtWatchResource from '@kubevirt-utils/hooks/useKubevirtWatchResource';
 import useProjects from '@kubevirt-utils/hooks/useProjects';
@@ -100,6 +101,8 @@ export const useTreeViewData = (): UseTreeViewData => {
 
   vmsSignal.value = memoizedVMs;
 
+  const getResourceUrl = useGetResourceUrl();
+
   const loaded =
     projectNamesLoaded &&
     (isAdmin ? allVMsLoaded : Object.values(allowedResources).some((resource) => resource.loaded));
@@ -108,6 +111,7 @@ export const useTreeViewData = (): UseTreeViewData => {
     () =>
       loaded
         ? createTreeViewData(
+            getResourceUrl,
             projectNames,
             memoizedVMs,
             isAdmin,
@@ -115,7 +119,15 @@ export const useTreeViewData = (): UseTreeViewData => {
             treeViewFoldersEnabled,
           )
         : [],
-    [projectNames, memoizedVMs, loaded, isAdmin, treeViewFoldersEnabled, location.pathname],
+    [
+      loaded,
+      getResourceUrl,
+      projectNames,
+      memoizedVMs,
+      isAdmin,
+      location.pathname,
+      treeViewFoldersEnabled,
+    ],
   );
 
   const isSwitchDisabled = useMemo(() => projectNames.every(isSystemNamespace), [projectNames]);

@@ -20,7 +20,7 @@ import { vmimStatuses } from '@kubevirt-utils/resources/vmim/statuses';
 import { useK8sModel } from '@openshift-console/dynamic-plugin-sdk';
 
 import { printableVMStatus } from '../../utils';
-import { VirtualMachineActionFactory } from '../VirtualMachineActionFactory';
+import { useVirtualMachineActionFactory } from '../VirtualMachineActionFactory';
 
 type UseVirtualMachineActionsProvider = (
   vm: V1VirtualMachine,
@@ -35,6 +35,7 @@ const useVirtualMachineActionsProvider: UseVirtualMachineActionsProvider = (
 ) => {
   const { createModal } = useModal();
   const { featureEnabled: confirmVMActionsEnabled } = useFeatures(CONFIRM_VM_ACTIONS);
+  const VirtualMachineActionFactory = useVirtualMachineActionFactory();
 
   const virtctlCommand = getConsoleVirtctlCommand(vm);
 
@@ -98,6 +99,7 @@ const useVirtualMachineActionsProvider: UseVirtualMachineActionsProvider = (
   }, [
     vm,
     vmim,
+    VirtualMachineActionFactory,
     isSingleNodeCluster,
     createModal,
     virtctlCommand,

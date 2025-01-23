@@ -2,14 +2,15 @@ import { V1VirtualMachine } from '@kubevirt-ui/kubevirt-api/kubevirt';
 import { ModalComponent } from '@kubevirt-utils/components/ModalProvider/ModalProvider';
 import { EjectIcon, PauseIcon, PlayIcon, RedoIcon, SquareIcon } from '@patternfly/react-icons';
 import { VMActionIconDetails } from '@virtualmachines/actions/components/VMActionsIconBar/utils/types';
-import { VirtualMachineActionFactory } from '@virtualmachines/actions/VirtualMachineActionFactory';
+import { useVirtualMachineActionFactory } from '@virtualmachines/actions/VirtualMachineActionFactory';
 import { isPaused, isRestoring, isSnapshotting } from '@virtualmachines/utils';
 
-export const getVMActionIconsDetails = (
+export const useVMActionIconsDetails = (
   vm: V1VirtualMachine,
   confirmVMActions: boolean,
   createModal: (modal: ModalComponent) => void,
 ): VMActionIconDetails[] => {
+  const VirtualMachineActionFactory = useVirtualMachineActionFactory();
   if (isSnapshotting(vm) || isRestoring(vm)) return [];
 
   const startAction = VirtualMachineActionFactory.start(vm);

@@ -6,8 +6,11 @@ import {
   V1VirtualMachineInstanceMigration,
 } from '@kubevirt-ui/kubevirt-api/kubevirt';
 import Timestamp from '@kubevirt-utils/components/Timestamp/Timestamp';
+import { MulticlusterResource } from '@kubevirt-utils/contexts/KubevirtPluginContext';
+import { useClusterScope } from '@kubevirt-utils/hooks/useClusterScope';
+import { useOpenShiftConsoleDynamicPluginSDK } from '@kubevirt-utils/hooks/useOpenShiftConsoleDynamicPluginSDK';
 import { getName, getNamespace } from '@kubevirt-utils/resources/shared';
-import { ResourceLink, RowProps, TableData } from '@openshift-console/dynamic-plugin-sdk';
+import { RowProps, TableData } from '@openshift-console/dynamic-plugin-sdk';
 import { Checkbox } from '@patternfly/react-core';
 import VirtualMachineActions from '@virtualmachines/actions/components/VirtualMachineActions/VirtualMachineActions';
 import useVirtualMachineActionsProvider from '@virtualmachines/actions/hooks/useVirtualMachineActionsProvider';
@@ -23,7 +26,7 @@ import './virtual-machine-row-layout.scss';
 
 const VirtualMachineRowLayout: FC<
   RowProps<
-    V1VirtualMachine,
+    MulticlusterResource<V1VirtualMachine>,
     {
       ips: ReactNode | string;
       isSingleNodeCluster: boolean;
@@ -40,11 +43,14 @@ const VirtualMachineRowLayout: FC<
 }) => {
   const selected = isVMSelected(obj);
 
+  const { ResourceLink } = useOpenShiftConsoleDynamicPluginSDK();
+  const { ClusterScope } = useClusterScope();
+
   const vmName = useMemo(() => getName(obj), [obj]);
   const vmNamespace = useMemo(() => getNamespace(obj), [obj]);
   const [actions] = useVirtualMachineActionsProvider(obj, vmim, isSingleNodeCluster);
   return (
-    <>
+    <ClusterScope cluster={obj.cluster}>
       <TableData activeColumnIDs={activeColumnIDs} className="selection-column vm-column" id="">
         <Checkbox
           id={`select-${obj?.metadata?.uid}`}
@@ -61,6 +67,19 @@ const VirtualMachineRowLayout: FC<
       </TableData>
       <TableData activeColumnIDs={activeColumnIDs} className="vm-column" id="namespace">
         <ResourceLink kind="Namespace" name={vmNamespace} truncate />
+      </TableData>
+      <TableData activeColumnIDs={activeColumnIDs} className="vm-column" id="cluster">
+        <ClusterScope localHubOverride>
+          <ResourceLink
+            groupVersionKind={{
+              group: 'cluster.open-cluster-management.io',
+              kind: 'ManagedCluster',
+              version: 'v1',
+            }}
+            name={obj.cluster}
+            truncate
+          />
+        </ClusterScope>
       </TableData>
       <TableData activeColumnIDs={activeColumnIDs} className="vm-column" id="status">
         {status}
@@ -93,7 +112,7 @@ const VirtualMachineRowLayout: FC<
       >
         <VirtualMachineActions actions={actions} isKebabToggle />
       </TableData>
-    </>
+    </ClusterScope>
   );
 };
 

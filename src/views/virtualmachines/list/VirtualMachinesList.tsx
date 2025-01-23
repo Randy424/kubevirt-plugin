@@ -20,6 +20,7 @@ import {
 } from '@kubevirt-ui/kubevirt-api/kubevirt';
 import ListPageFilter from '@kubevirt-utils/components/ListPageFilter/ListPageFilter';
 import { DEFAULT_NAMESPACE } from '@kubevirt-utils/constants/constants';
+import { MulticlusterResource } from '@kubevirt-utils/contexts/KubevirtPluginContext';
 import { KUBEVIRT_APISERVER_PROXY } from '@kubevirt-utils/hooks/useFeatures/constants';
 import { useFeatures } from '@kubevirt-utils/hooks/useFeatures/useFeatures';
 import useKubevirtDataPodHealth from '@kubevirt-utils/hooks/useKubevirtDataPod/hooks/useKubevirtDataPodHealth';
@@ -123,8 +124,8 @@ const VirtualMachinesList: FC<VirtualMachinesListProps> = forwardRef(({ kind, na
   const [pagination, setPagination] = useState(paginationInitialState);
 
   const [unfilterData, dataFilters, onFilterChange] = useListPageFilter<
-    V1VirtualMachine,
-    V1VirtualMachine
+    MulticlusterResource<V1VirtualMachine>,
+    MulticlusterResource<V1VirtualMachine>
   >(vms, [...filters, ...searchFilters]);
 
   // Allow using folder filters from the tree view

@@ -1,11 +1,9 @@
-import React, { FC, useMemo, useRef } from 'react';
-import { useLocation } from 'react-router-dom-v5-compat';
+import React, { FC, useRef } from 'react';
 
 import CreateResourceDefaultPage from '@kubevirt-utils/components/CreateResourceDefaultPage/CreateResourceDefaultPage';
-import { ALL_NAMESPACES_SESSION_KEY } from '@kubevirt-utils/hooks/constants';
 import { useKubevirtTranslation } from '@kubevirt-utils/hooks/useKubevirtTranslation';
 import { VirtualMachineModelRef } from '@kubevirt-utils/models';
-import { OnFilterChange, useActiveNamespace } from '@openshift-console/dynamic-plugin-sdk';
+import { OnFilterChange } from '@openshift-console/dynamic-plugin-sdk';
 import { useSignals } from '@preact/signals-react/runtime';
 import VirtualMachineNavPage from '@virtualmachines/details/VirtualMachineNavPage';
 import VirtualMachinesList from '@virtualmachines/list/VirtualMachinesList';
@@ -14,21 +12,13 @@ import VirtualMachineTreeView from '@virtualmachines/tree/VirtualMachineTreeView
 
 import { defaultVMYamlTemplate } from '../../../templates';
 
+import { useNavigatorLocationParams } from './hooks/useNavigatorLocationParams';
+
 const VirtualMachineNavigator: FC = () => {
   useSignals();
   const { t } = useKubevirtTranslation();
   const childRef = useRef<{ onFilterChange: OnFilterChange } | null>(null);
-  const location = useLocation();
-  const [activeNamespace] = useActiveNamespace();
-  const namespace = activeNamespace === ALL_NAMESPACES_SESSION_KEY ? null : activeNamespace;
-  const vmName = location.pathname.split('/')?.[5];
-
-  const isVirtualMachineListPage = useMemo(
-    () =>
-      location.pathname.endsWith(VirtualMachineModelRef) ||
-      location.pathname.endsWith(`${VirtualMachineModelRef}/`),
-    [location.pathname],
-  );
+  const { isList, namespace, newVM, vmName } = useNavigatorLocationParams();
 
   const treeProps = useTreeViewData();
 
@@ -38,7 +28,7 @@ const VirtualMachineNavigator: FC = () => {
     }
   };
 
-  if (location.pathname.endsWith(`${VirtualMachineModelRef}/~new`)) {
+  if (newVM) {
     return (
       <CreateResourceDefaultPage
         header={t('Create VirtualMachine')}
@@ -49,7 +39,7 @@ const VirtualMachineNavigator: FC = () => {
 
   return (
     <VirtualMachineTreeView onFilterChange={onFilterChange} {...treeProps}>
-      {isVirtualMachineListPage ? (
+      {isList ? (
         <VirtualMachinesList kind={VirtualMachineModelRef} namespace={namespace} ref={childRef} />
       ) : (
         <VirtualMachineNavPage kind={VirtualMachineModelRef} name={vmName} namespace={namespace} />

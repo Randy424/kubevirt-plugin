@@ -5,6 +5,7 @@ import {
   V1VirtualMachineInstance,
   V1VirtualMachineInstanceMigration,
 } from '@kubevirt-ui/kubevirt-api/kubevirt';
+import { MulticlusterResource } from '@kubevirt-utils/contexts/KubevirtPluginContext';
 import { getName, getNamespace } from '@kubevirt-utils/resources/shared';
 import { NO_DATA_DASH } from '@kubevirt-utils/resources/vm/utils/constants';
 import { isEmpty } from '@kubevirt-utils/utils/utils';
@@ -18,7 +19,7 @@ import VirtualMachineRunningRow from './VirtualMachineRunningRow';
 
 const VirtualMachineRow: FC<
   RowProps<
-    V1VirtualMachine,
+    MulticlusterResource<V1VirtualMachine>,
     {
       getVmi: (namespace: string, name: string) => V1VirtualMachineInstance;
       getVmim: (ns: string, name: string) => V1VirtualMachineInstanceMigration;

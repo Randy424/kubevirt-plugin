@@ -6,8 +6,8 @@ import { useInstanceTypeVMStore } from '@catalog/CreateFromInstanceTypes/state/u
 import HidableTooltip from '@kubevirt-utils/components/HidableTooltip/HidableTooltip';
 import { logITFlowEvent } from '@kubevirt-utils/extensions/telemetry/telemetry';
 import { CANCEL_CREATE_VM_BUTTON_CLICKED } from '@kubevirt-utils/extensions/telemetry/utils/constants';
+import { useGetResourceUrl } from '@kubevirt-utils/hooks/useGetResourceUrl';
 import { useKubevirtTranslation } from '@kubevirt-utils/hooks/useKubevirtTranslation';
-import { getResourceUrl } from '@kubevirt-utils/resources/shared';
 import { useActiveNamespace } from '@openshift-console/dynamic-plugin-sdk';
 import {
   Button,
@@ -43,10 +43,12 @@ const ActionButtons: FC<ActionButtonsProps> = ({
     instanceTypeVMState: { vmName },
   } = useInstanceTypeVMStore();
 
+  const getResourceUrl = useGetResourceUrl();
+
   const onCancel = useCallback(() => {
     logITFlowEvent(CANCEL_CREATE_VM_BUTTON_CLICKED, null, { vmName: vmName });
     navigate(getResourceUrl({ activeNamespace, model: VirtualMachineModel }));
-  }, [activeNamespace, navigate, vmName]);
+  }, [activeNamespace, getResourceUrl, navigate, vmName]);
 
   const { disableButtonTooltipContent, isCreationDisabled, isViewYAMLDisabled } =
     useStatusActionButtons(isLoading);

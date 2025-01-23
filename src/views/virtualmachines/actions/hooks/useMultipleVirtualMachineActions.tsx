@@ -9,13 +9,14 @@ import { useKubevirtTranslation } from '@kubevirt-utils/hooks/useKubevirtTransla
 import ConfirmMultipleVMActionsModal from '@virtualmachines/actions/components/ConfirmMultipleVMActionsModal/ConfirmMultipleVMActionsModal';
 import { isPaused, isRunning, isStopped } from '@virtualmachines/utils';
 
-import { pauseVM, restartVM, startVM, stopVM, unpauseVM } from '../actions';
+import { useVMActions } from '../actions';
 
 import { ACTIONS_ID } from './constants';
 
 type UseMultipleVirtualMachineActions = (vms: V1VirtualMachine[]) => ActionDropdownItemType[];
 
 const useMultipleVirtualMachineActions: UseMultipleVirtualMachineActions = (vms) => {
+  const { pauseVM, restartVM, startVM, stopVM, unpauseVM } = useVMActions();
   const { t } = useKubevirtTranslation();
   const { createModal } = useModal();
   const { featureEnabled: confirmVMActionsEnabled } = useFeatures(CONFIRM_VM_ACTIONS);
@@ -96,7 +97,17 @@ const useMultipleVirtualMachineActions: UseMultipleVirtualMachineActions = (vms)
     }
 
     return actions;
-  }, [t, vms]);
+  }, [
+    confirmVMActionsEnabled,
+    createModal,
+    pauseVM,
+    restartVM,
+    startVM,
+    stopVM,
+    t,
+    unpauseVM,
+    vms,
+  ]);
 };
 
 export default useMultipleVirtualMachineActions;

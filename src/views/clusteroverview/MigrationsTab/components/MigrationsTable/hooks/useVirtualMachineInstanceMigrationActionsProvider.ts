@@ -7,7 +7,7 @@ import { VirtualMachineModelRef } from '@kubevirt-utils/models';
 import { asAccessReview } from '@kubevirt-utils/resources/shared';
 import { vmimStatuses } from '@kubevirt-utils/resources/vmim/statuses';
 import { Action, useK8sModel } from '@openshift-console/dynamic-plugin-sdk';
-import { cancelMigration } from '@virtualmachines/actions/actions';
+import { useVMActions } from '@virtualmachines/actions/actions';
 
 type UseVirtualMachineInstanceMigrationActionsProvider = (
   vmim: V1VirtualMachineInstanceMigration,
@@ -16,6 +16,7 @@ type UseVirtualMachineInstanceMigrationActionsProvider = (
 const useVirtualMachineInstanceMigrationActionsProvider: UseVirtualMachineInstanceMigrationActionsProvider =
   (vmim) => {
     const { t } = useKubevirtTranslation();
+    const { cancelMigration } = useVMActions();
 
     const [, inFlight] = useK8sModel(VirtualMachineModelRef);
 

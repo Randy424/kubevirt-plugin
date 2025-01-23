@@ -14,7 +14,7 @@ import {
   Title,
 } from '@patternfly/react-core';
 import { CloseIcon, WarningTriangleIcon } from '@patternfly/react-icons';
-import { rollbackStorageMigration } from '@virtualmachines/actions/actions';
+import { useVMActions } from '@virtualmachines/actions/actions';
 
 type VirtualMachineMigrationRollbackProps = {
   onClose: () => void;
@@ -28,6 +28,7 @@ const VirtualMachineMigrationRollback: FC<VirtualMachineMigrationRollbackProps> 
   vm,
 }) => {
   const { t } = useKubevirtTranslation();
+  const { rollbackStorageMigration } = useVMActions();
   const [loadingRollback, setLoadingRollback] = useState(false);
   const [errorRollback, setErrorRollback] = useState<Error>();
 
