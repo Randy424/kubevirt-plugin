@@ -1,0 +1,45 @@
+import { createContext, FC, PropsWithChildren } from 'react';
+import React from 'react';
+
+import { getResourceUrl } from '@kubevirt-utils/utils/getResourceUrl';
+import * as OpenshiftDynamicPluginSDK from '@openshift-console/dynamic-plugin-sdk';
+import { WatchK8sResource } from '@openshift-console/dynamic-plugin-sdk';
+
+const ClusterScope = ({ children }: PropsWithChildren<ClusterScope>) => {
+  return <>{children}</>;
+};
+const withCluster = () => OpenshiftDynamicPluginSDK;
+
+type ClusterScope = {
+  cluster?: string;
+  localHubOverride?: boolean;
+};
+
+export type MulticlusterResource<T> = { cluster: string } & T;
+
+export type KubevirtPluginData = {
+  clusterScope: {
+    ClusterScope: FC<ClusterScope>;
+    withCluster: (cluster?: string) => typeof OpenshiftDynamicPluginSDK;
+  };
+  currentCluster?: string;
+  currentNamespace?: string;
+  dynamicPluginSDK: typeof OpenshiftDynamicPluginSDK;
+  getResourceUrl: typeof getResourceUrl;
+  supportsMulticluster: boolean;
+  useMulticlusterSearchWatch: <T>(
+    watchOptions: WatchK8sResource,
+  ) => [MulticlusterResource<T>, boolean, Error | undefined];
+};
+
+const defaultContext: KubevirtPluginData = {
+  clusterScope: { ClusterScope, withCluster },
+  dynamicPluginSDK: OpenshiftDynamicPluginSDK,
+  getResourceUrl,
+  supportsMulticluster: false,
+  useMulticlusterSearchWatch: () => [undefined, false, undefined],
+};
+
+const KubevirtPluginContext = createContext<KubevirtPluginData>(defaultContext);
+
+export default KubevirtPluginContext;

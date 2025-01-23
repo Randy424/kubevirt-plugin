@@ -7,7 +7,7 @@ import {
 import type { ConsolePluginBuildMetadata } from '@openshift-console/dynamic-plugin-sdk-webpack';
 
 export const exposedModules: ConsolePluginBuildMetadata['exposedModules'] = {
-  KubevirtPluginContext: './utils/contexts/KubevirtPluginContext.ts',
+  KubevirtPluginContext: './utils/contexts/KubevirtPluginContext.tsx',
   LogsStandAlone:
     './views/virtualmachines/details/tabs/diagnostic/VirtualMachineLogViewer/VirtualMachineLogViewerStandAlone/VirtualMachineLogViewerStandAlone.tsx',
   Navigator: './views/virtualmachines/navigator/VirtualMachineNavigator.tsx',
@@ -43,19 +43,6 @@ export const extensions: EncodedExtension[] = [
     },
     type: 'console.action/resource-provider',
   } as EncodedExtension<ResourceActionProvider>,
-
-  {
-    properties: {
-      component: { $codeRef: 'VirtualMachinesOverviewTab' },
-    },
-    type: 'acm.search/details',
-  },
-  {
-    properties: {
-      context: { $codeRef: 'KubevirtPluginContext' },
-    },
-    type: 'acm.kubevirt-context',
-  },
   {
     properties: {
       component: {
@@ -69,4 +56,32 @@ export const extensions: EncodedExtension[] = [
     },
     type: 'console.page/route',
   } as EncodedExtension<RoutePage>,
+  {
+    properties: {
+      context: { $codeRef: 'KubevirtPluginContext' },
+    },
+    type: 'acm.kubevirt-context',
+  },
+  {
+    properties: {
+      component: { $codeRef: 'VirtualMachinesOverviewTab' },
+      model: {
+        group: 'kubevirt.io',
+        kind: 'VirtualMachine',
+        version: 'v1',
+      },
+    },
+    type: 'acm.search/details',
+  },
+  {
+    properties: {
+      component: { $codeRef: 'Navigator' },
+      model: {
+        group: 'kubevirt.io',
+        kind: 'VirtualMachine',
+        version: 'v1',
+      },
+    },
+    type: 'acm.page/resource/list',
+  },
 ];

@@ -3,8 +3,7 @@ import { useLocation, useNavigate, useParams, useSearchParams } from 'react-rout
 
 import { useQueryParamsMethods } from '@kubevirt-utils/components/ListPageFilter/hooks/useQueryParamsMethods';
 import { ALL_NAMESPACES, ALL_NAMESPACES_SESSION_KEY } from '@kubevirt-utils/hooks/constants';
-import { isEmpty } from '@kubevirt-utils/utils/utils';i
-import { useGetResourceUrl } from '@kubevirt-utils/hooks/useGetResourceUrl';
+import { isEmpty } from '@kubevirt-utils/utils/utils';
 import { FilterValue } from '@openshift-console/dynamic-plugin-sdk';
 import { useLastNamespace } from '@openshift-console/dynamic-plugin-sdk-internal';
 import { TEXT_FILTER_LABELS_ID } from '@virtualmachines/list/hooks/constants';
@@ -30,7 +29,6 @@ const useTreeViewSelect = (
   const [selected, setSelected] = useState<TreeViewDataItemWithHref>(null);
 
   const navigate = useNavigate();
-  const getResourceUrl = useGetResourceUrl();
   const { setOrRemoveQueryArgument } = useQueryParamsMethods();
   const [_, setLastNamespace] = useLastNamespace();
 

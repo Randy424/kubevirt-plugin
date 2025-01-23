@@ -4,6 +4,7 @@ import { NodeModel, VirtualMachineModelRef } from '@kubevirt-ui/kubevirt-api/con
 import { V1VirtualMachine } from '@kubevirt-ui/kubevirt-api/kubevirt';
 import { useKubevirtTranslation } from '@kubevirt-utils/hooks/useKubevirtTranslation';
 import useKubevirtUserSettingsTableColumns from '@kubevirt-utils/hooks/useKubevirtUserSettings/useKubevirtUserSettingsTableColumns';
+import { useSupportsMulticluster } from '@kubevirt-utils/hooks/useSupportsMulticluster';
 import { columnSorting } from '@kubevirt-utils/utils/utils';
 import {
   K8sResourceCommon,
@@ -23,6 +24,8 @@ const useVirtualMachineColumns = (
   vmiMapper: VmiMapper,
 ): [TableColumn<K8sResourceCommon>[], TableColumn<K8sResourceCommon>[], boolean] => {
   const { t } = useKubevirtTranslation();
+
+  const supportsMulticluster = useSupportsMulticluster();
 
   const [canGetNode] = useAccessReview({
     namespace: namespace,
@@ -64,16 +67,30 @@ const useVirtualMachineColumns = (
             },
           ]
         : []),
+      ...(supportsMulticluster
+        ? [
+            {
+              id: 'cluster',
+              sort: (_, direction) => sorting(direction, 'cluster'),
+              title: t('Cluster'),
+              transforms: [sortable],
+            },
+          ]
+        : []),
       {
         id: 'status',
         sort: (_, direction) => sorting(direction, 'status.printableStatus'),
         title: t('Status'),
         transforms: [sortable],
       },
-      {
-        id: 'conditions',
-        title: t('Conditions'),
-      },
+      ...(supportsMulticluster
+        ? []
+        : [
+            {
+              id: 'conditions',
+              title: t('Conditions'),
+            },
+          ]),
       ...(canGetNode
         ? [
             {
@@ -95,34 +112,46 @@ const useVirtualMachineColumns = (
         id: 'ip-address',
         title: t('IP address'),
       },
-      {
-        additional: true,
-        id: 'memory-usage',
-        sort: (_, direction) => sortingUsingFunctionWithMapper(direction, sortByMemoryUsage),
-        title: t('Memory'),
-        transforms: [sortable],
-      },
-      {
-        additional: true,
-        id: 'cpu-usage',
-        sort: (_, direction) => sortingUsingFunction(direction, sortByCPUUsage),
-        title: t('CPU'),
-        transforms: [sortable],
-      },
-      {
-        additional: true,
-        id: 'network-usage',
-        sort: (_, direction) => sortingUsingFunction(direction, sortByNetworkUsage),
-        title: t('Network'),
-        transforms: [sortable],
-      },
+      ...(supportsMulticluster
+        ? []
+        : [
+            {
+              additional: true,
+              id: 'memory-usage',
+              sort: (_, direction) => sortingUsingFunctionWithMapper(direction, sortByMemoryUsage),
+              title: t('Memory'),
+              transforms: [sortable],
+            },
+            {
+              additional: true,
+              id: 'cpu-usage',
+              sort: (_, direction) => sortingUsingFunction(direction, sortByCPUUsage),
+              title: t('CPU'),
+              transforms: [sortable],
+            },
+            {
+              additional: true,
+              id: 'network-usage',
+              sort: (_, direction) => sortingUsingFunction(direction, sortByNetworkUsage),
+              title: t('Network'),
+              transforms: [sortable],
+            },
+          ]),
       {
         id: '',
         props: { className: 'dropdown-kebab-pf pf-v5-c-table__action' },
         title: '',
       },
     ],
-    [canGetNode, namespace, sorting, sortingUsingFunction, sortingUsingFunctionWithMapper, t],
+    [
+      canGetNode,
+      namespace,
+      sorting,
+      sortingUsingFunction,
+      sortingUsingFunctionWithMapper,
+      supportsMulticluster,
+      t,
+    ],
   );
 
   const [activeColumns, , loaded] = useKubevirtUserSettingsTableColumns<K8sResourceCommon>({

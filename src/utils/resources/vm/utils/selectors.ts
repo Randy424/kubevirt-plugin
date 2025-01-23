@@ -291,7 +291,7 @@ export const getPreferenceMatcher = (vm: V1VirtualMachine): V1PreferenceMatcher 
  * @returns {V1VirtualMachineCondition[]} the VM's status conditions
  */
 export const getStatusConditions = (vm: V1VirtualMachine): V1VirtualMachineCondition[] =>
-  vm?.status?.conditions;
+  vm?.status?.conditions ?? [];
 
 export const getStatusConditionByType = (
   vm: V1VirtualMachine,

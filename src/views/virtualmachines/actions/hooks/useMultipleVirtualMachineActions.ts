@@ -5,7 +5,7 @@ import { ActionDropdownItemType } from '@kubevirt-utils/components/ActionsDropdo
 import { useKubevirtTranslation } from '@kubevirt-utils/hooks/useKubevirtTranslation';
 import { isPaused, isRunning, isStopped } from '@virtualmachines/utils';
 
-import { pauseVM, restartVM, startVM, stopVM, unpauseVM } from '../actions';
+import { useVMActions } from '../actions';
 
 import { ACTIONS_ID } from './constants';
 
@@ -13,6 +13,7 @@ type UseMultipleVirtualMachineActions = (vms: V1VirtualMachine[]) => ActionDropd
 
 const useMultipleVirtualMachineActions: UseMultipleVirtualMachineActions = (vms) => {
   const { t } = useKubevirtTranslation();
+  const { pauseVM, restartVM, startVM, stopVM, unpauseVM } = useVMActions();
 
   return useMemo(() => {
     const actions: ActionDropdownItemType[] = [

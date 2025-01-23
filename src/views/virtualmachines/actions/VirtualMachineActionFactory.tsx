@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import VirtualMachineCloneModel from '@kubevirt-ui/kubevirt-api/console/models/VirtualMachineCloneModel';
 import VirtualMachineInstanceMigrationModel from '@kubevirt-ui/kubevirt-api/console/models/VirtualMachineInstanceMigrationModel';
@@ -31,16 +31,7 @@ import {
 } from '../utils';
 
 import DeleteVMModal from './components/DeleteVMModal/DeleteVMModal';
-import {
-  cancelMigration,
-  migrateVM,
-  pauseVM,
-  restartVM,
-  rollbackStorageMigration,
-  startVM,
-  stopVM,
-  unpauseVM,
-} from './actions';
+import { useVMActions } from './actions';
 
 const {
   Migrating,
@@ -54,235 +45,261 @@ const {
   Unknown,
 } = printableVMStatus;
 
-export const VirtualMachineActionFactory = {
-  cancelComputeMigration: (
-    vm: V1VirtualMachine,
-    vmim: V1VirtualMachineInstanceMigration,
-    isSingleNodeCluster: boolean,
-  ): Action => {
-    return {
-      accessReview: {
-        group: VirtualMachineInstanceMigrationModel.apiGroup,
-        namespace: vm?.metadata?.namespace,
-        resource: VirtualMachineInstanceMigrationModel.plural,
-        verb: 'delete',
+export const useVirtualMachineActionFactory = () => {
+  const {
+    cancelMigration,
+    migrateVM,
+    pauseVM,
+    restartVM,
+    rollbackStorageMigration,
+    startVM,
+    stopVM,
+    unpauseVM,
+  } = useVMActions();
+  return useMemo(
+    () => ({
+      cancelComputeMigration: (
+        vm: V1VirtualMachine,
+        vmim: V1VirtualMachineInstanceMigration,
+        isSingleNodeCluster: boolean,
+      ): Action => {
+        return {
+          accessReview: {
+            group: VirtualMachineInstanceMigrationModel.apiGroup,
+            namespace: vm?.metadata?.namespace,
+            resource: VirtualMachineInstanceMigrationModel.plural,
+            verb: 'delete',
+          },
+          cta: () => cancelMigration(vmim),
+          description: !!vmim?.metadata?.deletionTimestamp && t('Canceling ongoing migration'),
+          disabled: isSingleNodeCluster || !vmim || !!vmim?.metadata?.deletionTimestamp,
+          id: 'vm-action-cancel-migrate',
+          label: t('Cancel compute migration'),
+        };
       },
-      cta: () => cancelMigration(vmim),
-      description: !!vmim?.metadata?.deletionTimestamp && t('Canceling ongoing migration'),
-      disabled: isSingleNodeCluster || !vmim || !!vmim?.metadata?.deletionTimestamp,
-      id: 'vm-action-cancel-migrate',
-      label: t('Cancel compute migration'),
-    };
-  },
-  cancelStorageMigration: (
-    vm: V1VirtualMachine,
-    vmim: V1VirtualMachineInstanceMigration,
-    isSingleNodeCluster: boolean,
-  ): Action => {
-    return {
-      accessReview: {
-        group: VirtualMachineModel.apiGroup,
-        namespace: vm?.metadata?.namespace,
-        resource: VirtualMachineModel.plural,
-        verb: 'patch',
+      cancelStorageMigration: (
+        vm: V1VirtualMachine,
+        vmim: V1VirtualMachineInstanceMigration,
+        isSingleNodeCluster: boolean,
+      ): Action => {
+        return {
+          accessReview: {
+            group: VirtualMachineModel.apiGroup,
+            namespace: vm?.metadata?.namespace,
+            resource: VirtualMachineModel.plural,
+            verb: 'patch',
+          },
+          cta: () => {
+            cancelMigration(vmim);
+            return rollbackStorageMigration(vm);
+          },
+          disabled: isSingleNodeCluster,
+          id: 'vm-action-cancel-storage-migrate',
+          label: t('Cancel storage migration'),
+        };
       },
-      cta: () => {
-        cancelMigration(vmim);
-        return rollbackStorageMigration(vm);
+      clone: (vm: V1VirtualMachine, createModal: (modal: ModalComponent) => void): Action => {
+        return {
+          accessReview: asAccessReview(VirtualMachineCloneModel, vm, 'create'),
+          cta: () =>
+            createModal(({ isOpen, onClose }) => (
+              <CloneVMModal isOpen={isOpen} onClose={onClose} source={vm} />
+            )),
+          id: 'vm-action-clone',
+          label: t('Clone'),
+        };
       },
-      disabled: isSingleNodeCluster,
-      id: 'vm-action-cancel-storage-migrate',
-      label: t('Cancel storage migration'),
-    };
-  },
-  clone: (vm: V1VirtualMachine, createModal: (modal: ModalComponent) => void): Action => {
-    return {
-      accessReview: asAccessReview(VirtualMachineCloneModel, vm, 'create'),
-      cta: () =>
-        createModal(({ isOpen, onClose }) => (
-          <CloneVMModal isOpen={isOpen} onClose={onClose} source={vm} />
-        )),
-      id: 'vm-action-clone',
-      label: t('Clone'),
-    };
-  },
-  copySSHCommand: (vm: V1VirtualMachine, command: string): Action => {
-    return {
-      accessReview: asAccessReview(VirtualMachineModel, vm, 'patch'),
-      cta: () => command && navigator.clipboard.writeText(command),
-      description: t('SSH using virtctl'),
-      disabled: isEmpty(getVMSSHSecretName(vm)),
-      icon: <CopyIcon />,
-      id: 'vm-action-copy-ssh',
-      label: t('Copy SSH command'),
-    };
-  },
-  delete: (vm: V1VirtualMachine, createModal: (modal: ModalComponent) => void): Action => {
-    return {
-      accessReview: asAccessReview(VirtualMachineModel, vm, 'delete'),
-      cta: () =>
-        createModal(({ isOpen, onClose }) => (
-          <DeleteVMModal isOpen={isOpen} onClose={onClose} vm={vm} />
-        )),
-      description: isRunning(vm) && t('The VirtualMachine is running'),
-      disabled: isRunning(vm),
-      id: 'vm-action-delete',
-      label: t('Delete'),
-    };
-  },
-  forceStop: (vm: V1VirtualMachine): Action => {
-    return {
-      accessReview: asAccessReview(VirtualMachineModel, vm, 'patch'),
-      cta: () =>
-        stopVM(vm, {
-          gracePeriod: 0,
-        }),
-      disabled: [Migrating, Provisioning, Stopped, Unknown].includes(vm?.status?.printableStatus),
-      id: 'vm-action-force-stop',
-      label: t('Force stop'),
-    };
-  },
-  migrateCompute: (vm: V1VirtualMachine, isSingleNodeCluster: boolean): Action => {
-    return {
-      accessReview: {
-        group: VirtualMachineInstanceMigrationModel.apiGroup,
-        namespace: vm?.metadata?.namespace,
-        resource: VirtualMachineInstanceMigrationModel.plural,
-        verb: 'create',
+      copySSHCommand: (vm: V1VirtualMachine, command: string): Action => {
+        return {
+          accessReview: asAccessReview(VirtualMachineModel, vm, 'patch'),
+          cta: () => command && navigator.clipboard.writeText(command),
+          description: t('SSH using virtctl'),
+          disabled: isEmpty(getVMSSHSecretName(vm)),
+          icon: <CopyIcon />,
+          id: 'vm-action-copy-ssh',
+          label: t('Copy SSH command'),
+        };
       },
-      cta: () => migrateVM(vm),
-      description: t('Migrate VirtualMachine to a different Node'),
-      disabled: !isLiveMigratable(vm, isSingleNodeCluster),
-      id: 'vm-action-migrate',
-      label: t('Compute'),
-    };
-  },
-  migrateStorage: (vm: V1VirtualMachine, createModal: (modal: ModalComponent) => void): Action => {
-    return {
-      accessReview: {
-        group: VirtualMachineModel.apiGroup,
-        namespace: getNamespace(vm),
-        resource: VirtualMachineModel.plural,
-        verb: 'patch',
+      delete: (vm: V1VirtualMachine, createModal: (modal: ModalComponent) => void): Action => {
+        return {
+          accessReview: asAccessReview(VirtualMachineModel, vm, 'delete'),
+          cta: () =>
+            createModal(({ isOpen, onClose }) => (
+              <DeleteVMModal isOpen={isOpen} onClose={onClose} vm={vm} />
+            )),
+          description: isRunning(vm) && t('The VirtualMachine is running'),
+          disabled: isRunning(vm),
+          id: 'vm-action-delete',
+          label: t('Delete'),
+        };
       },
-      cta: () => createModal((props) => <VirtualMachineMigrateModal vm={vm} {...props} />),
-      description: t('Migrate VirtualMachine storage to a different StorageClass'),
-      id: 'vm-migrate-storage',
-      label: t('Storage'),
-    };
-  },
-  migrationActions: (migrationActions): ActionDropdownItemType => ({
-    id: 'migration-menu',
-    label: 'Migration',
-    options: migrationActions,
-  }),
-  moveToFolder: (vm: V1VirtualMachine, createModal: (modal: ModalComponent) => void): Action => {
-    return {
-      accessReview: {
-        group: VirtualMachineModel.apiGroup,
-        namespace: getNamespace(vm),
-        resource: VirtualMachineModel.plural,
-        verb: 'patch',
+      forceStop: (vm: V1VirtualMachine): Action => {
+        return {
+          accessReview: asAccessReview(VirtualMachineModel, vm, 'patch'),
+          cta: () =>
+            stopVM(vm, {
+              gracePeriod: 0,
+            }),
+          disabled: [Migrating, Provisioning, Stopped, Unknown].includes(
+            vm?.status?.printableStatus,
+          ),
+          id: 'vm-action-force-stop',
+          label: t('Force stop'),
+        };
       },
-      cta: () =>
-        createModal((props) => (
-          <MoveVMToFolderModal
-            onSubmit={(folderName) => {
-              const labels = vm?.metadata?.labels || {};
-              labels[VM_FOLDER_LABEL] = folderName;
-              return k8sPatch({
-                data: [
-                  {
-                    op: 'replace',
-                    path: '/metadata/labels',
-                    value: labels,
-                  },
-                ],
-                model: VirtualMachineModel,
-                resource: vm,
-              });
-            }}
-            vm={vm}
-            {...props}
-          />
-        )),
-      id: 'vm-action-move-to-folder',
-      label: t('Move to folder'),
-    };
-  },
-  pause: (vm: V1VirtualMachine): Action => {
-    return {
-      accessReview: asAccessReview(VirtualMachineModel, vm, 'patch'),
-      cta: () => pauseVM(vm),
-      disabled: vm?.status?.printableStatus !== Running || isSnapshotting(vm) || isRestoring(vm),
-      id: 'vm-action-pause',
-      label: t('Pause'),
-    };
-  },
-  restart: (vm: V1VirtualMachine): Action => {
-    return {
-      accessReview: asAccessReview(VirtualMachineModel, vm, 'patch'),
-      cta: () => restartVM(vm),
-      disabled:
-        [Migrating, Provisioning, Stopped, Stopping, Terminating, Unknown].includes(
-          vm?.status?.printableStatus,
-        ) ||
-        isSnapshotting(vm) ||
-        isRestoring(vm),
-      id: 'vm-action-restart',
-      label: t('Restart'),
-    };
-  },
-  snapshot: (vm: V1VirtualMachine, createModal: (modal: ModalComponent) => void): Action => {
-    return {
-      accessReview: asAccessReview(VirtualMachineSnapshotModel, vm, 'create'),
-      cta: () => createModal((props) => <SnapshotModal vm={vm} {...props} />),
-      id: 'vm-action-snapshot',
-      label: t('Take snapshot'),
-    };
-  },
-  start: (vm: V1VirtualMachine): Action => {
-    return {
-      accessReview: asAccessReview(VirtualMachineModel, vm, 'patch'),
-      cta: () => startVM(vm),
-      disabled:
-        [
-          Migrating,
-          Paused,
-          Provisioning,
-          Running,
-          Starting,
-          Stopping,
-          Terminating,
-          Unknown,
-        ].includes(vm?.status?.printableStatus) ||
-        isSnapshotting(vm) ||
-        isRestoring(vm),
-      id: 'vm-action-start',
-      label: t('Start'),
-    };
-  },
-  stop: (vm: V1VirtualMachine): Action => {
-    return {
-      accessReview: asAccessReview(VirtualMachineModel, vm, 'patch'),
-      cta: () => stopVM(vm),
-      disabled:
-        [Provisioning, Stopped, Stopping, Terminating, Unknown].includes(
-          vm?.status?.printableStatus,
-        ) ||
-        isSnapshotting(vm) ||
-        isRestoring(vm),
-      id: 'vm-action-stop',
-      label: t('Stop'),
-    };
-  },
-  unpause: (vm: V1VirtualMachine): Action => {
-    return {
-      accessReview: asAccessReview(VirtualMachineModel, vm, 'patch'),
-      cta: () => unpauseVM(vm),
-      disabled: vm?.status?.printableStatus !== Paused,
-      id: 'vm-action-unpause',
-      label: t('Unpause'),
-    };
-  },
+      migrateCompute: (vm: V1VirtualMachine, isSingleNodeCluster: boolean): Action => {
+        return {
+          accessReview: {
+            group: VirtualMachineInstanceMigrationModel.apiGroup,
+            namespace: vm?.metadata?.namespace,
+            resource: VirtualMachineInstanceMigrationModel.plural,
+            verb: 'create',
+          },
+          cta: () => migrateVM(vm),
+          description: t('Migrate VirtualMachine to a different Node'),
+          disabled: !isLiveMigratable(vm, isSingleNodeCluster),
+          id: 'vm-action-migrate',
+          label: t('Compute'),
+        };
+      },
+      migrateStorage: (
+        vm: V1VirtualMachine,
+        createModal: (modal: ModalComponent) => void,
+      ): Action => {
+        return {
+          accessReview: {
+            group: VirtualMachineModel.apiGroup,
+            namespace: getNamespace(vm),
+            resource: VirtualMachineModel.plural,
+            verb: 'patch',
+          },
+          cta: () => createModal((props) => <VirtualMachineMigrateModal vm={vm} {...props} />),
+          description: t('Migrate VirtualMachine storage to a different StorageClass'),
+          id: 'vm-migrate-storage',
+          label: t('Storage'),
+        };
+      },
+      migrationActions: (migrationActions): ActionDropdownItemType => ({
+        id: 'migration-menu',
+        label: 'Migration',
+        options: migrationActions,
+      }),
+      moveToFolder: (
+        vm: V1VirtualMachine,
+        createModal: (modal: ModalComponent) => void,
+      ): Action => {
+        return {
+          accessReview: {
+            group: VirtualMachineModel.apiGroup,
+            namespace: getNamespace(vm),
+            resource: VirtualMachineModel.plural,
+            verb: 'patch',
+          },
+          cta: () =>
+            createModal((props) => (
+              <MoveVMToFolderModal
+                onSubmit={(folderName) => {
+                  const labels = vm?.metadata?.labels || {};
+                  labels[VM_FOLDER_LABEL] = folderName;
+                  return k8sPatch({
+                    data: [
+                      {
+                        op: 'replace',
+                        path: '/metadata/labels',
+                        value: labels,
+                      },
+                    ],
+                    model: VirtualMachineModel,
+                    resource: vm,
+                  });
+                }}
+                vm={vm}
+                {...props}
+              />
+            )),
+          id: 'vm-action-move-to-folder',
+          label: t('Move to folder'),
+        };
+      },
+      pause: (vm: V1VirtualMachine): Action => {
+        return {
+          accessReview: asAccessReview(VirtualMachineModel, vm, 'patch'),
+          cta: () => pauseVM(vm),
+          disabled:
+            vm?.status?.printableStatus !== Running || isSnapshotting(vm) || isRestoring(vm),
+          id: 'vm-action-pause',
+          label: t('Pause'),
+        };
+      },
+      restart: (vm: V1VirtualMachine): Action => {
+        return {
+          accessReview: asAccessReview(VirtualMachineModel, vm, 'patch'),
+          cta: () => restartVM(vm),
+          disabled:
+            [Migrating, Provisioning, Stopped, Stopping, Terminating, Unknown].includes(
+              vm?.status?.printableStatus,
+            ) ||
+            isSnapshotting(vm) ||
+            isRestoring(vm),
+          id: 'vm-action-restart',
+          label: t('Restart'),
+        };
+      },
+      snapshot: (vm: V1VirtualMachine, createModal: (modal: ModalComponent) => void): Action => {
+        return {
+          accessReview: asAccessReview(VirtualMachineSnapshotModel, vm, 'create'),
+          cta: () => createModal((props) => <SnapshotModal vm={vm} {...props} />),
+          id: 'vm-action-snapshot',
+          label: t('Take snapshot'),
+        };
+      },
+      start: (vm: V1VirtualMachine): Action => {
+        return {
+          accessReview: asAccessReview(VirtualMachineModel, vm, 'patch'),
+          cta: () => startVM(vm),
+          disabled:
+            [Migrating, Provisioning, Running, Starting, Stopping, Terminating, Unknown].includes(
+              vm?.status?.printableStatus,
+            ) ||
+            isSnapshotting(vm) ||
+            isRestoring(vm),
+          id: 'vm-action-start',
+          label: t('Start'),
+        };
+      },
+      stop: (vm: V1VirtualMachine): Action => {
+        return {
+          accessReview: asAccessReview(VirtualMachineModel, vm, 'patch'),
+          cta: () => stopVM(vm),
+          disabled:
+            [Provisioning, Stopped, Stopping, Terminating, Unknown].includes(
+              vm?.status?.printableStatus,
+            ) ||
+            isSnapshotting(vm) ||
+            isRestoring(vm),
+          id: 'vm-action-stop',
+          label: t('Stop'),
+        };
+      },
+      unpause: (vm: V1VirtualMachine): Action => {
+        return {
+          accessReview: asAccessReview(VirtualMachineModel, vm, 'patch'),
+          cta: () => unpauseVM(vm),
+          disabled: vm?.status?.printableStatus !== Paused,
+          id: 'vm-action-unpause',
+          label: t('Unpause'),
+        };
+      },
+    }),
+    [
+      cancelMigration,
+      migrateVM,
+      pauseVM,
+      restartVM,
+      rollbackStorageMigration,
+      startVM,
+      stopVM,
+      unpauseVM,
+    ],
+  );
 };

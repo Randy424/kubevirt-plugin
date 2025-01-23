@@ -5,11 +5,13 @@ import {
   V1VirtualMachineInstance,
   V1VirtualMachineInstanceMigration,
 } from '@kubevirt-ui/kubevirt-api/kubevirt';
+import { MulticlusterResource } from '@kubevirt-utils/contexts/KubevirtPluginContext';
 import { useKubevirtTranslation } from '@kubevirt-utils/hooks/useKubevirtTranslation';
+import { useOpenShiftConsoleDynamicPluginSDK } from '@kubevirt-utils/hooks/useOpenShiftConsoleDynamicPluginSDK';
 import { modelToGroupVersionKind, NodeModel } from '@kubevirt-utils/models';
 import { getMemory } from '@kubevirt-utils/resources/vm';
 import { getVMIIPAddressesWithName } from '@kubevirt-utils/resources/vmi';
-import { ResourceLink, RowProps } from '@openshift-console/dynamic-plugin-sdk';
+import { RowProps } from '@openshift-console/dynamic-plugin-sdk';
 
 import FirstItemListPopover from '../FirstItemListPopover/FirstItemListPopover';
 
@@ -17,7 +19,7 @@ import VirtualMachineRowLayout from './VirtualMachineRowLayout';
 
 const VirtualMachineRunningRow: FC<
   RowProps<
-    V1VirtualMachine,
+    MulticlusterResource<V1VirtualMachine>,
     {
       isSingleNodeCluster: boolean;
       status: ReactNode;
@@ -27,6 +29,7 @@ const VirtualMachineRunningRow: FC<
   >
 > = ({ activeColumnIDs, obj, rowData: { isSingleNodeCluster, status, vmi, vmim } }) => {
   const { t } = useKubevirtTranslation();
+  const { ResourceLink } = useOpenShiftConsoleDynamicPluginSDK();
 
   const ipAddressess = vmi && getVMIIPAddressesWithName(vmi);
   return (

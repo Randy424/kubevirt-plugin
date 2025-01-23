@@ -5,6 +5,7 @@ import { VirtualMachineModelGroupVersionKind } from '@kubevirt-ui/kubevirt-api/c
 import { V1VirtualMachine } from '@kubevirt-ui/kubevirt-api/kubevirt';
 import { TREE_VIEW_FOLDERS } from '@kubevirt-utils/hooks/useFeatures/constants';
 import { useFeatures } from '@kubevirt-utils/hooks/useFeatures/useFeatures';
+import { useGetResourceUrl } from '@kubevirt-utils/hooks/useGetResourceUrl';
 import { useIsAdmin } from '@kubevirt-utils/hooks/useIsAdmin';
 import useProjects from '@kubevirt-utils/hooks/useProjects';
 import { useK8sWatchResource, useK8sWatchResources } from '@openshift-console/dynamic-plugin-sdk';
@@ -54,6 +55,8 @@ export const useTreeViewData = (): UseTreeViewData => {
     [allVMs, allowedResources, isAdmin],
   );
 
+  const getResourceUrl = useGetResourceUrl();
+
   const loaded =
     projectNamesLoaded &&
     (isAdmin ? allVMsLoaded : Object.values(allowedResources).some((resource) => resource.loaded));
@@ -62,6 +65,7 @@ export const useTreeViewData = (): UseTreeViewData => {
     () =>
       loaded
         ? createTreeViewData(
+            getResourceUrl,
             projectNames,
             memoizedVMs,
             isAdmin,
@@ -69,7 +73,15 @@ export const useTreeViewData = (): UseTreeViewData => {
             treeViewFoldersEnabled,
           )
         : [],
-    [projectNames, memoizedVMs, loaded, isAdmin, treeViewFoldersEnabled, location.pathname],
+    [
+      loaded,
+      getResourceUrl,
+      projectNames,
+      memoizedVMs,
+      isAdmin,
+      location.pathname,
+      treeViewFoldersEnabled,
+    ],
   );
 
   const isSwitchDisabled = useMemo(() => projectNames.every(isSystemNamespace), [projectNames]);
