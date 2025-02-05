@@ -4,11 +4,11 @@ import { VirtualMachineModelGroupVersionKind } from '@kubevirt-ui/kubevirt-api/c
 import { V1VirtualMachine, V1VirtualMachineInstance } from '@kubevirt-ui/kubevirt-api/kubevirt';
 import Loading from '@kubevirt-utils/components/Loading/Loading';
 import { useKubevirtTranslation } from '@kubevirt-utils/hooks/useKubevirtTranslation';
+import { useOpenShiftConsoleDynamicPluginSDK } from '@kubevirt-utils/hooks/useOpenShiftConsoleDynamicPluginSDK';
 import { getGPUDevices } from '@kubevirt-utils/resources/vm';
 import { isWindows } from '@kubevirt-utils/resources/vm/utils/operation-system/operationSystem';
 import { isEmpty } from '@kubevirt-utils/utils/utils';
 import { RFBCreate } from '@novnc/novnc/lib/rfb';
-import { useK8sWatchResource } from '@openshift-console/dynamic-plugin-sdk';
 import { Bullseye, Flex, FlexItem, Stack, StackItem } from '@patternfly/react-core';
 
 import { AccessConsoles } from './components/AccessConsoles/AccessConsoles';
@@ -37,6 +37,7 @@ const Consoles: FC<ConsolesProps> = ({ consoleContainerClass, isStandAlone, vmi 
   const [type, setType] = useState<string>(VNC_CONSOLE_TYPE);
   const [rfb, setRFB] = useState<RFBCreate>(null);
   const [serialSocket, setSerialSocket] = useState<WSFactoryExtends>(null);
+  const { useK8sWatchResource } = useOpenShiftConsoleDynamicPluginSDK();
   const [vm] = useK8sWatchResource<V1VirtualMachine>({
     groupVersionKind: VirtualMachineModelGroupVersionKind,
     name: vmi?.metadata?.name,

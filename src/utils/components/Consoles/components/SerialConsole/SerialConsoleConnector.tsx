@@ -10,6 +10,7 @@ import React, {
 
 import { V1VirtualMachineInstance } from '@kubevirt-ui/kubevirt-api/kubevirt';
 import LoadingEmptyState from '@kubevirt-utils/components/LoadingEmptyState/LoadingEmptyState';
+import { useK8sAPIPath } from '@kubevirt-utils/hooks/useK8sAPIPath';
 import { useKubevirtTranslation } from '@kubevirt-utils/hooks/useKubevirtTranslation';
 import { kubevirtConsole } from '@kubevirt-utils/utils/utils';
 import { WSFactory } from '@openshift-console/dynamic-plugin-sdk/lib/utils/k8s/ws-factory';
@@ -35,6 +36,8 @@ const SerialConsoleConnector: FC<SerialConsoleConnectorProps> = ({ onConnect, vm
   const [status, setStatus] = useState(init);
   const pasteText = useCopyPasteConsole();
 
+  const k8sAPIPath = useK8sAPIPath();
+
   const terminalRef = useRef(null);
   const [socket, setSocket] = useState<WebSocket>(null);
 
@@ -49,7 +52,7 @@ const SerialConsoleConnector: FC<SerialConsoleConnectorProps> = ({ onConnect, vm
         window.location.port || (isConnectionEncrypted() ? SECURE : INSECURE)
       }`,
       jsonParse: false,
-      path: `/api/kubernetes/apis/subresources.kubevirt.io/v1/namespaces/${vmi?.metadata?.namespace}/virtualmachineinstances/${vmi?.metadata?.name}/console`,
+      path: `${k8sAPIPath}/apis/subresources.kubevirt.io/v1/namespaces/${vmi?.metadata?.namespace}/virtualmachineinstances/${vmi?.metadata?.name}/console`,
       reconnect: false,
       subprotocols: ['plain.kubevirt.io'],
     };
@@ -81,7 +84,7 @@ const SerialConsoleConnector: FC<SerialConsoleConnectorProps> = ({ onConnect, vm
     };
     setSocket(createdSocket);
     onConnect?.(createdSocket);
-  }, [socket, vmi?.metadata?.namespace, vmi?.metadata?.name, onConnect, pasteText]);
+  }, [socket, k8sAPIPath, vmi?.metadata?.namespace, vmi?.metadata?.name, onConnect, pasteText]);
 
   useEffect(() => {
     !socket && connect();

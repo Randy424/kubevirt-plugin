@@ -96,4 +96,10 @@ export const extensions: EncodedExtension[] = [
     },
     type: 'console.telemetry/listener',
   } as EncodedExtension<TelemetryListener>,
+  {
+    properties: {
+      component: { $codeRef: 'ConsoleStandAlone' },
+    },
+    type: 'acm.page/virtualmachine/console',
+  },
 ];
