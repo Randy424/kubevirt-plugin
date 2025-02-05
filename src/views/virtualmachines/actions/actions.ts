@@ -10,7 +10,10 @@ import {
   V1VirtualMachine,
   V1VirtualMachineInstanceMigration,
 } from '@kubevirt-ui/kubevirt-api/kubevirt';
-import { KubevirtPluginData } from '@kubevirt-utils/contexts/KubevirtPluginContext';
+import {
+  KubevirtPluginData,
+  MulticlusterResource,
+} from '@kubevirt-utils/contexts/KubevirtPluginContext';
 import { useClusterScope } from '@kubevirt-utils/hooks/useClusterScope';
 import { getNamespace } from '@kubevirt-utils/resources/shared';
 import { getUpdateStrategy } from '@kubevirt-utils/resources/vm';
@@ -39,7 +42,7 @@ export enum VMActionType {
 
 export const VMActionRequest = async (
   withCluster: KubevirtPluginData['clusterScope']['withCluster'],
-  vm: V1VirtualMachine,
+  vm: MulticlusterResource<V1VirtualMachine>,
   action: VMActionType,
   model: K8sModel,
   body?: V1AddVolumeOptions | V1RemoveVolumeOptions | V1StopOptions,
