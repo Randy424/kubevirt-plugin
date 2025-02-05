@@ -2,6 +2,7 @@ import React, { FC, useCallback, useEffect, useMemo, useRef, useState } from 're
 import cn from 'classnames';
 
 import LoadingEmptyState from '@kubevirt-utils/components/LoadingEmptyState/LoadingEmptyState';
+import { useK8sAPIPath } from '@kubevirt-utils/hooks/useK8sAPIPath';
 import { useKubevirtTranslation } from '@kubevirt-utils/hooks/useKubevirtTranslation';
 import { kubevirtConsole } from '@kubevirt-utils/utils/utils';
 import KeyTable from '@novnc/novnc/core/input/keysym';
@@ -54,13 +55,15 @@ export const VncConsole: FC<VncConsoleProps> = ({
     [staticRenderLocationRef, status],
   );
 
+  const k8sAPIPath = useK8sAPIPath();
+
   const connect = useCallback(() => {
     setStatus(connecting);
     setRfb(() => {
       const isEncrypted = isConnectionEncrypted();
-      const path = `api/kubernetes/apis/subresources.kubevirt.io/v1/namespaces/${vmi?.metadata?.namespace}/virtualmachineinstances/${vmi?.metadata?.name}/vnc`;
+      const path = `${k8sAPIPath}/apis/subresources.kubevirt.io/v1/namespaces/${vmi?.metadata?.namespace}/virtualmachineinstances/${vmi?.metadata?.name}/vnc`;
       const port = window.location.port || (isEncrypted ? SECURE : INSECURE);
-      const url = `${isEncrypted ? WSS : WS}://${window.location.hostname}:${port}/${path}`;
+      const url = `${isEncrypted ? WSS : WS}://${window.location.hostname}:${port}${path}`;
       const rfbInstnce = new RFBCreate(staticRenderLocationRef.current, url);
       rfbInstnce?.addEventListener('connect', () => setStatus(connected));
       rfbInstnce?.addEventListener('disconnect', () => {

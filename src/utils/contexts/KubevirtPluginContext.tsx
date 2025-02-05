@@ -26,6 +26,7 @@ export type KubevirtPluginData = {
   currentNamespace?: string;
   dynamicPluginSDK: typeof OpenshiftDynamicPluginSDK;
   getResourceUrl: typeof getResourceUrl;
+  k8sAPIPath: string;
   supportsMulticluster: boolean;
   useMulticlusterSearchWatch: <T>(
     watchOptions: WatchK8sResource,
@@ -36,6 +37,7 @@ const defaultContext: KubevirtPluginData = {
   clusterScope: { ClusterScope, withCluster },
   dynamicPluginSDK: OpenshiftDynamicPluginSDK,
   getResourceUrl,
+  k8sAPIPath: '/api/kubernetes',
   supportsMulticluster: false,
   useMulticlusterSearchWatch: () => [undefined, false, undefined],
 };
