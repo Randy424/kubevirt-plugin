@@ -2,6 +2,7 @@ import { createContext, FC, PropsWithChildren } from 'react';
 import React from 'react';
 
 import { getResourceUrl } from '@kubevirt-utils/utils/getResourceUrl';
+import { getStandaloneVMConsoleUrl } from '@kubevirt-utils/utils/getStandaloneVMConsoleUrl';
 import { withCluster } from '@kubevirt-utils/utils/withCluster';
 import * as OpenshiftDynamicPluginSDK from '@openshift-console/dynamic-plugin-sdk';
 import { WatchK8sResource } from '@openshift-console/dynamic-plugin-sdk';
@@ -14,7 +15,7 @@ type ClusterScope = {
   localHubOverride?: boolean;
 };
 
-export type MulticlusterResource<T> = { cluster: string } & T;
+export type MulticlusterResource<T> = { cluster?: string } & T;
 
 export type KubevirtPluginData = {
   clusterScope: {
@@ -25,6 +26,7 @@ export type KubevirtPluginData = {
   currentNamespace?: string;
   dynamicPluginSDK: typeof OpenshiftDynamicPluginSDK;
   getResourceUrl: typeof getResourceUrl;
+  getStandaloneVMConsoleUrl: typeof getStandaloneVMConsoleUrl;
   k8sAPIPath: string;
   supportsMulticluster: boolean;
   useMulticlusterSearchWatch: <T>(
@@ -36,6 +38,7 @@ const defaultContext: KubevirtPluginData = {
   clusterScope: { ClusterScope, withCluster },
   dynamicPluginSDK: OpenshiftDynamicPluginSDK,
   getResourceUrl,
+  getStandaloneVMConsoleUrl,
   k8sAPIPath: '/api/kubernetes',
   supportsMulticluster: false,
   useMulticlusterSearchWatch: () => [undefined, false, undefined],

@@ -3,6 +3,7 @@ import React, { FC } from 'react';
 import { V1VirtualMachineInstance } from '@kubevirt-ui/kubevirt-api/kubevirt';
 import VncConsole from '@kubevirt-utils/components/Consoles/components/vnc-console/VncConsole';
 import { isHeadlessModeVMI } from '@kubevirt-utils/components/Consoles/utils/utils';
+import { useGetStandaloneVMConsoleUrl } from '@kubevirt-utils/hooks/useGetStandaloneVMConsoleUrl';
 import { useKubevirtTranslation } from '@kubevirt-utils/hooks/useKubevirtTranslation';
 import { vmiStatuses } from '@kubevirt-utils/resources/vmi';
 import { useAccessReview } from '@openshift-console/dynamic-plugin-sdk';
@@ -19,6 +20,7 @@ const VirtualMachinesOverviewTabDetailsConsole: FC<
   VirtualMachinesOverviewTabDetailsConsoleProps
 > = ({ vmi }) => {
   const { t } = useKubevirtTranslation();
+  const getStandaloneVMConsoleUrl = useGetStandaloneVMConsoleUrl();
 
   const isHeadlessMode = isHeadlessModeVMI(vmi);
   const isVMRunning = vmi?.status?.phase === vmiStatuses.Running;
@@ -35,7 +37,10 @@ const VirtualMachinesOverviewTabDetailsConsole: FC<
         <Button
           onClick={() =>
             window.open(
-              `/k8s/ns/${vmi?.metadata?.namespace}/kubevirt.io~v1~VirtualMachine/${vmi?.metadata?.name}/console/standalone`,
+              getStandaloneVMConsoleUrl({
+                name: vmi?.metadata?.name,
+                namespace: vmi?.metadata?.namespace,
+              }),
             )
           }
           isDisabled={!isVMRunning || isHeadlessMode || !canConnectConsole}
