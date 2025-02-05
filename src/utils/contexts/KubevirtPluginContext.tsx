@@ -2,14 +2,13 @@ import { createContext, FC, PropsWithChildren } from 'react';
 import React from 'react';
 
 import { getResourceUrl } from '@kubevirt-utils/utils/getResourceUrl';
+import { withCluster } from '@kubevirt-utils/utils/withCluster';
 import * as OpenshiftDynamicPluginSDK from '@openshift-console/dynamic-plugin-sdk';
 import { WatchK8sResource } from '@openshift-console/dynamic-plugin-sdk';
 
 const ClusterScope = ({ children }: PropsWithChildren<ClusterScope>) => {
   return <>{children}</>;
 };
-const withCluster = () => OpenshiftDynamicPluginSDK;
-
 type ClusterScope = {
   cluster?: string;
   localHubOverride?: boolean;
