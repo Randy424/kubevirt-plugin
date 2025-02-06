@@ -38,7 +38,7 @@ const useKubevirtWatchResource: UseKubevirtWatchResource = <T>(watchOptions, fil
     return null;
   }, [featureEnabled, loading, isProxyPodAlive]);
   const [resourceSearchWatch, loadedSearchWatch, loadErrorSearchWatch] =
-    useMulticlusterSearchWatch(watchOptions);
+    useMulticlusterSearchWatch<T>(watchOptions);
   const [resourceK8sWatch, loadedK8sWatch, loadErrorK8sWatch] = useK8sWatchResource<T>(
     shouldUseProxyPod === false && watchOptions,
   );
