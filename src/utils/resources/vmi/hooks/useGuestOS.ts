@@ -5,7 +5,7 @@ import {
   V1VirtualMachineInstance,
   V1VirtualMachineInstanceGuestAgentInfo,
 } from '@kubevirt-ui/kubevirt-api/kubevirt';
-import { consoleFetch } from '@openshift-console/dynamic-plugin-sdk';
+import { useOpenShiftConsoleDynamicPluginSDK } from '@kubevirt-utils/hooks/useOpenShiftConsoleDynamicPluginSDK';
 
 type UseGuestOS = (
   vmi?: V1VirtualMachineInstance,
@@ -15,10 +15,10 @@ export const useGuestOS: UseGuestOS = (vmi) => {
   const [loaded, setLoaded] = useState(false);
   const [data, setData] = useState<V1VirtualMachineInstanceGuestAgentInfo>({});
   const [error, setError] = useState(null);
+  const { consoleFetch } = useOpenShiftConsoleDynamicPluginSDK();
 
   useEffect(() => {
     const guestOS = vmi?.status?.guestOSInfo?.id;
-
     setError(null);
     if (guestOS) {
       (async () => {
@@ -34,7 +34,7 @@ export const useGuestOS: UseGuestOS = (vmi) => {
       });
     }
     (!vmi || (!guestOS && vmi?.metadata)) && setLoaded(true);
-  }, [loaded, vmi]);
+  }, [loaded, vmi, consoleFetch]);
 
   return [data, loaded, error];
 };
