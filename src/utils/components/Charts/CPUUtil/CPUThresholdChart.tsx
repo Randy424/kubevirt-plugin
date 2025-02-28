@@ -1,14 +1,12 @@
-import React, { FC, useMemo } from 'react';
+import React, { FC, useContext, useMemo } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 
 import { V1VirtualMachineInstance } from '@kubevirt-ui/kubevirt-api/kubevirt';
+import KubevirtPluginContext from '@kubevirt-utils/contexts/KubevirtPluginContext';
+import { useOpenShiftConsoleDynamicPluginSDK } from '@kubevirt-utils/hooks/useOpenShiftConsoleDynamicPluginSDK';
 import { getVMIPod } from '@kubevirt-utils/resources/vmi';
 import { isEmpty } from '@kubevirt-utils/utils/utils';
-import {
-  K8sResourceCommon,
-  PrometheusEndpoint,
-  usePrometheusPoll,
-} from '@openshift-console/dynamic-plugin-sdk';
+import { K8sResourceCommon, PrometheusEndpoint } from '@openshift-console/dynamic-plugin-sdk';
 import {
   Chart,
   ChartArea,
@@ -43,11 +41,13 @@ const CPUThresholdChart: FC<CPUThresholdChartProps> = ({ pods, vmi }) => {
   const vmiPod = useMemo(() => getVMIPod(vmi, pods), [pods, vmi]);
   const { currentTime, duration, timespan } = useDuration();
   const { height, ref, width } = useResponsiveCharts();
-  const queries = useMemo(
-    () => getUtilizationQueries({ duration, launcherPodName: vmiPod?.metadata?.name, obj: vmi }),
-    [vmi, vmiPod, duration],
+  const { useUtilizationQueries } = useContext(KubevirtPluginContext);
+  const queries = useUtilizationQueries(
+    getUtilizationQueries({ duration, launcherPodName: vmiPod?.metadata?.name, obj: vmi }),
+    duration,
   );
 
+  const { usePrometheusPoll } = useOpenShiftConsoleDynamicPluginSDK();
   const [dataCPURequested] = usePrometheusPoll({
     endpoint: PrometheusEndpoint?.QUERY_RANGE,
     endTime: currentTime,

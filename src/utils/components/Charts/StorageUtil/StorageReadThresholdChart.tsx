@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import xbytes from 'xbytes';
 
 import { V1VirtualMachineInstance } from '@kubevirt-ui/kubevirt-api/kubevirt';
+import KubevirtPluginContext from '@kubevirt-utils/contexts/KubevirtPluginContext';
+import { useOpenShiftConsoleDynamicPluginSDK } from '@kubevirt-utils/hooks/useOpenShiftConsoleDynamicPluginSDK';
 import { isEmpty } from '@kubevirt-utils/utils/utils';
-import { PrometheusEndpoint, usePrometheusPoll } from '@openshift-console/dynamic-plugin-sdk';
+import { PrometheusEndpoint } from '@openshift-console/dynamic-plugin-sdk';
 import {
   Chart,
   ChartArea,
@@ -27,12 +29,11 @@ const GIB_IN_BYTES = 1024;
 
 const StorageReadThresholdChart: React.FC<StorageThresholdChartProps> = ({ vmi }) => {
   const { currentTime, duration, timespan } = useDuration();
-  const queries = React.useMemo(
-    () => getUtilizationQueries({ duration, obj: vmi }),
-    [vmi, duration],
-  );
   const { height, ref, width } = useResponsiveCharts();
+  const { useUtilizationQueries } = useContext(KubevirtPluginContext);
+  const queries = useUtilizationQueries(getUtilizationQueries({ duration, obj: vmi }), duration);
 
+  const { usePrometheusPoll } = useOpenShiftConsoleDynamicPluginSDK();
   const [data] = usePrometheusPoll({
     endpoint: PrometheusEndpoint?.QUERY_RANGE,
     endTime: currentTime,

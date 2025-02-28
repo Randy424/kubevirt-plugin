@@ -1,17 +1,15 @@
-import React, { FC, useMemo } from 'react';
+import React, { FC, useContext, useMemo } from 'react';
 
 import { V1VirtualMachineInstance } from '@kubevirt-ui/kubevirt-api/kubevirt';
 import SubTitleChartLabel from '@kubevirt-utils/components/Charts/ChartLabels/SubTitleChartLabel';
 import TitleChartLabel from '@kubevirt-utils/components/Charts/ChartLabels/TitleChartLabel';
 import ComponentReady from '@kubevirt-utils/components/Charts/ComponentReady/ComponentReady';
 import { getUtilizationQueries } from '@kubevirt-utils/components/Charts/utils/queries';
+import KubevirtPluginContext from '@kubevirt-utils/contexts/KubevirtPluginContext';
 import { useKubevirtTranslation } from '@kubevirt-utils/hooks/useKubevirtTranslation';
+import { useOpenShiftConsoleDynamicPluginSDK } from '@kubevirt-utils/hooks/useOpenShiftConsoleDynamicPluginSDK';
 import { getVMIPod } from '@kubevirt-utils/resources/vmi';
-import {
-  K8sResourceCommon,
-  PrometheusEndpoint,
-  usePrometheusPoll,
-} from '@openshift-console/dynamic-plugin-sdk';
+import { K8sResourceCommon, PrometheusEndpoint } from '@openshift-console/dynamic-plugin-sdk';
 import { ChartDonutUtilization } from '@patternfly/react-charts';
 import useDuration from '@virtualmachines/details/tabs/metrics/hooks/useDuration';
 
@@ -24,11 +22,13 @@ const CPUUtil: FC<CPUUtilProps> = ({ pods, vmi }) => {
   const { t } = useKubevirtTranslation();
   const vmiPod = useMemo(() => getVMIPod(vmi, pods), [pods, vmi]);
   const { currentTime, duration } = useDuration();
-  const queries = useMemo(
-    () => getUtilizationQueries({ duration, launcherPodName: vmiPod?.metadata?.name, obj: vmi }),
-    [vmi, vmiPod, duration],
+  const { useUtilizationQueries } = useContext(KubevirtPluginContext);
+  const queries = useUtilizationQueries(
+    getUtilizationQueries({ duration, launcherPodName: vmiPod?.metadata?.name, obj: vmi }),
+    duration,
   );
 
+  const { usePrometheusPoll } = useOpenShiftConsoleDynamicPluginSDK();
   const [dataCPURequested] = usePrometheusPoll({
     endpoint: PrometheusEndpoint?.QUERY,
     endTime: currentTime,

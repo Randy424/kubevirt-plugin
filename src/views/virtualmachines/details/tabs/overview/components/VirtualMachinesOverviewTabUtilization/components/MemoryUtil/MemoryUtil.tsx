@@ -1,4 +1,4 @@
-import React, { FC, useMemo } from 'react';
+import React, { FC, useContext } from 'react';
 import xbytes from 'xbytes';
 
 import { V1VirtualMachineInstance } from '@kubevirt-ui/kubevirt-api/kubevirt';
@@ -7,10 +7,12 @@ import TitleChartLabel from '@kubevirt-utils/components/Charts/ChartLabels/Title
 import ComponentReady from '@kubevirt-utils/components/Charts/ComponentReady/ComponentReady';
 import { getUtilizationQueries } from '@kubevirt-utils/components/Charts/utils/queries';
 import { getMemorySize } from '@kubevirt-utils/components/CPUMemoryModal/utils/CpuMemoryUtils';
+import KubevirtPluginContext from '@kubevirt-utils/contexts/KubevirtPluginContext';
 import { useKubevirtTranslation } from '@kubevirt-utils/hooks/useKubevirtTranslation';
+import { useOpenShiftConsoleDynamicPluginSDK } from '@kubevirt-utils/hooks/useOpenShiftConsoleDynamicPluginSDK';
 import { getMemory } from '@kubevirt-utils/resources/vm';
 import { isEmpty } from '@kubevirt-utils/utils/utils';
-import { PrometheusEndpoint, usePrometheusPoll } from '@openshift-console/dynamic-plugin-sdk';
+import { PrometheusEndpoint } from '@openshift-console/dynamic-plugin-sdk';
 import { ChartDonutUtilization } from '@patternfly/react-charts';
 import useDuration from '@virtualmachines/details/tabs/metrics/hooks/useDuration';
 
@@ -21,10 +23,12 @@ type MemoryUtilProps = {
 const MemoryUtil: FC<MemoryUtilProps> = ({ vmi }) => {
   const { t } = useKubevirtTranslation();
   const { currentTime, duration } = useDuration();
-  const queries = useMemo(() => getUtilizationQueries({ duration, obj: vmi }), [vmi, duration]);
-
   const memory = getMemorySize(getMemory(vmi));
 
+  const { useUtilizationQueries } = useContext(KubevirtPluginContext);
+  const queries = useUtilizationQueries(getUtilizationQueries({ duration, obj: vmi }), duration);
+
+  const { usePrometheusPoll } = useOpenShiftConsoleDynamicPluginSDK();
   const [data] = usePrometheusPoll({
     endpoint: PrometheusEndpoint?.QUERY,
     endTime: currentTime,
@@ -35,7 +39,10 @@ const MemoryUtil: FC<MemoryUtilProps> = ({ vmi }) => {
   const memoryUsed = +data?.data?.result?.[0]?.value?.[1];
   const memoryAvailableBytes = xbytes.parseSize(`${memory?.size} ${memory?.unit}B`);
   const percentageMemoryUsed = (memoryUsed / memoryAvailableBytes) * 100;
-  const isReady = !isEmpty(memory) && !Number.isNaN(percentageMemoryUsed);
+  const isReady =
+    !isEmpty(memory) &&
+    !Number.isNaN(percentageMemoryUsed) &&
+    Number.isFinite(percentageMemoryUsed);
 
   return (
     <div className="util">
@@ -52,7 +59,7 @@ const MemoryUtil: FC<MemoryUtilProps> = ({ vmi }) => {
         </div>
       </div>
       <div className="util-chart">
-        <ComponentReady isReady={isReady}>
+        <ComponentReady isReady={isReady} spinner>
           <ChartDonutUtilization
             data={{
               x: t('Memory used'),

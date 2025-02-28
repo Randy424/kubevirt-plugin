@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useContext, useMemo } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import xbytes from 'xbytes';
 
@@ -6,10 +6,12 @@ import VirtualMachineModel from '@kubevirt-ui/kubevirt-api/console/models/Virtua
 import { V1VirtualMachineInstance } from '@kubevirt-ui/kubevirt-api/kubevirt';
 import ComponentReady from '@kubevirt-utils/components/Charts/ComponentReady/ComponentReady';
 import { getUtilizationQueries } from '@kubevirt-utils/components/Charts/utils/queries';
+import KubevirtPluginContext from '@kubevirt-utils/contexts/KubevirtPluginContext';
 import { useKubevirtTranslation } from '@kubevirt-utils/hooks/useKubevirtTranslation';
+import { useOpenShiftConsoleDynamicPluginSDK } from '@kubevirt-utils/hooks/useOpenShiftConsoleDynamicPluginSDK';
 import { getResourceUrl } from '@kubevirt-utils/utils/getResourceUrl';
 import { isEmpty } from '@kubevirt-utils/utils/utils';
-import { PrometheusEndpoint, usePrometheusPoll } from '@openshift-console/dynamic-plugin-sdk';
+import { PrometheusEndpoint } from '@openshift-console/dynamic-plugin-sdk';
 import { Button, ButtonVariant, Popover, Text, TextVariants } from '@patternfly/react-core';
 import useDuration from '@virtualmachines/details/tabs/metrics/hooks/useDuration';
 
@@ -20,11 +22,11 @@ type NetworkUtilProps = {
 const NetworkUtil: React.FC<NetworkUtilProps> = ({ vmi }) => {
   const { t } = useKubevirtTranslation();
   const { currentTime, duration } = useDuration();
-  const queries = React.useMemo(
-    () => getUtilizationQueries({ duration, obj: vmi }),
-    [vmi, duration],
-  );
   const interfacesNames = useMemo(() => vmi?.spec?.domain?.devices?.interfaces, [vmi]);
+  const { useUtilizationQueries } = useContext(KubevirtPluginContext);
+  const queries = useUtilizationQueries(getUtilizationQueries({ duration, obj: vmi }), duration);
+
+  const { usePrometheusPoll } = useOpenShiftConsoleDynamicPluginSDK();
   const [networkIn] = usePrometheusPoll({
     endpoint: PrometheusEndpoint?.QUERY,
     endTime: currentTime,

@@ -1,12 +1,14 @@
-import React, { FC, useMemo } from 'react';
+import React, { FC, useContext } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import xbytes from 'xbytes';
 
 import { V1VirtualMachineInstance } from '@kubevirt-ui/kubevirt-api/kubevirt';
 import { getMemorySize } from '@kubevirt-utils/components/CPUMemoryModal/utils/CpuMemoryUtils';
+import KubevirtPluginContext from '@kubevirt-utils/contexts/KubevirtPluginContext';
+import { useOpenShiftConsoleDynamicPluginSDK } from '@kubevirt-utils/hooks/useOpenShiftConsoleDynamicPluginSDK';
 import { getMemory } from '@kubevirt-utils/resources/vm';
 import { isEmpty } from '@kubevirt-utils/utils/utils';
-import { PrometheusEndpoint, usePrometheusPoll } from '@openshift-console/dynamic-plugin-sdk';
+import { PrometheusEndpoint } from '@openshift-console/dynamic-plugin-sdk';
 import {
   Chart,
   ChartArea,
@@ -38,11 +40,13 @@ type MemoryThresholdChartProps = {
 
 const MemoryThresholdChart: FC<MemoryThresholdChartProps> = ({ vmi }) => {
   const { currentTime, duration, timespan } = useDuration();
-  const queries = useMemo(() => getUtilizationQueries({ duration, obj: vmi }), [vmi, duration]);
   const { height, ref, width } = useResponsiveCharts();
 
   const memory = getMemorySize(getMemory(vmi));
+  const { useUtilizationQueries } = useContext(KubevirtPluginContext);
+  const queries = useUtilizationQueries(getUtilizationQueries({ duration, obj: vmi }), duration);
 
+  const { usePrometheusPoll } = useOpenShiftConsoleDynamicPluginSDK();
   const [data] = usePrometheusPoll({
     endpoint: PrometheusEndpoint?.QUERY_RANGE,
     endTime: currentTime,

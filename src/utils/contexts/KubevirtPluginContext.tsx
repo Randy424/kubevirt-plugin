@@ -20,6 +20,11 @@ type SearchResult<R extends K8sResourceCommon | K8sResourceCommon[]> = R extends
   ? MulticlusterResource<T>[]
   : MulticlusterResource<R>;
 
+export type UseUtilizationQueries = (
+  prometheusQueries: Record<string, string>,
+  duration: string,
+) => Record<string, string>;
+
 export type KubevirtPluginData = {
   clusterScope: {
     ClusterScope: FC<ClusterScope>;
@@ -35,6 +40,7 @@ export type KubevirtPluginData = {
   useMulticlusterSearchWatch: <T extends K8sResourceCommon | K8sResourceCommon[]>(
     watchOptions: WatchK8sResource,
   ) => [SearchResult<T>, boolean, Error | undefined];
+  useUtilizationQueries: UseUtilizationQueries;
 };
 
 const defaultContext: KubevirtPluginData = {
@@ -45,6 +51,7 @@ const defaultContext: KubevirtPluginData = {
   k8sAPIPath: '/api/kubernetes',
   supportsMulticluster: false,
   useMulticlusterSearchWatch: () => [undefined, false, undefined],
+  useUtilizationQueries: (prometheusQueries) => prometheusQueries,
 };
 
 const KubevirtPluginContext = createContext<KubevirtPluginData>(defaultContext);
