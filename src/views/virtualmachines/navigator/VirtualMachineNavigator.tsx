@@ -18,7 +18,7 @@ const VirtualMachineNavigator: FC = () => {
   useSignals();
   const { t } = useKubevirtTranslation();
   const childRef = useRef<{ onFilterChange: OnFilterChange } | null>(null);
-  const { isList, namespace, newVM, vmName } = useNavigatorLocationParams();
+  const { cluster, isList, namespace, newVM, vmName } = useNavigatorLocationParams();
 
   const treeProps = useTreeViewData();
 
@@ -40,7 +40,12 @@ const VirtualMachineNavigator: FC = () => {
   return (
     <VirtualMachineTreeView onFilterChange={onFilterChange} {...treeProps}>
       {isList ? (
-        <VirtualMachinesList kind={VirtualMachineModelRef} namespace={namespace} ref={childRef} />
+        <VirtualMachinesList
+          cluster={cluster}
+          kind={VirtualMachineModelRef}
+          namespace={namespace}
+          ref={childRef}
+        />
       ) : (
         <VirtualMachineNavPage kind={VirtualMachineModelRef} name={vmName} namespace={namespace} />
       )}

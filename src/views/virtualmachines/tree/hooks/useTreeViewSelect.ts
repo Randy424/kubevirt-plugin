@@ -34,6 +34,9 @@ const useTreeViewSelect = (
 
   const onSelect = useCallback(
     (_event: MouseEvent, treeViewItem: TreeViewDataItemWithHref) => {
+      if (selected && selected.id === treeViewItem.id) {
+        setSelected(null);
+      }
       setSelected(treeViewItem);
       navigate(treeViewItem.href);
 
@@ -45,7 +48,7 @@ const useTreeViewSelect = (
         });
       }
     },
-    [navigate, onFilterChange, setOrRemoveQueryArgument],
+    [navigate, onFilterChange, selected, setOrRemoveQueryArgument],
   );
 
   // Apply the selected item when reloading the page / creating project / creating VM / deleting VM

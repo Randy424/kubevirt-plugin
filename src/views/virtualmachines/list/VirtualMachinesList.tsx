@@ -61,227 +61,268 @@ import '@kubevirt-utils/styles/list-managment-group.scss';
 import './VirtualMachinesList.scss';
 
 type VirtualMachinesListProps = {
+  cluster?: string;
   kind: string;
   namespace: string;
 } & RefAttributes<{ onFilterChange: OnFilterChange } | null>;
 
-const VirtualMachinesList: FC<VirtualMachinesListProps> = forwardRef(({ kind, namespace }, ref) => {
-  const { t } = useKubevirtTranslation();
-  const catalogURL = `/k8s/ns/${namespace || DEFAULT_NAMESPACE}/catalog`;
-  const { featureEnabled, loading: loadingFeatureProxy } = useFeatures(KUBEVIRT_APISERVER_PROXY);
-  const isProxyPodAlive = useKubevirtDataPodHealth();
+const VirtualMachinesList: FC<VirtualMachinesListProps> = forwardRef(
+  ({ cluster, kind, namespace }, ref) => {
+    const { t } = useKubevirtTranslation();
+    const catalogURL = `/k8s/ns/${namespace || DEFAULT_NAMESPACE}/catalog`;
+    const { featureEnabled, loading: loadingFeatureProxy } = useFeatures(KUBEVIRT_APISERVER_PROXY);
+    const isProxyPodAlive = useKubevirtDataPodHealth();
 
-  useSignals();
-  useVMMetrics();
+    useSignals();
+    useVMMetrics();
 
-  const query = useQuery();
+    const query = useQuery();
 
-  const [vms, vmLoaded, loadError] = useKubevirtWatchResource<V1VirtualMachine[]>(
-    {
-      groupVersionKind: VirtualMachineModelGroupVersionKind,
-      isList: true,
-      limit: OBJECTS_FETCHING_LIMIT,
-      namespace,
-      namespaced: true,
-    },
-    {
-      labels: 'metadata.labels',
-      name: 'metadata.name',
-      'rowFilter-instanceType': 'spec.instancetype.name',
-      'rowFilter-live-migratable': 'status.conditions',
-      'rowFilter-os': 'spec.template.metadata.annotations.vm\\.kubevirt\\.io/os',
-      'rowFilter-status': 'status.printableStatus',
-      'rowFilter-template': 'metadata.labels.vm\\.kubevirt\\.io/template',
-    },
-  );
-
-  const [vmis, vmiLoaded] = useKubevirtWatchResource<V1VirtualMachineInstance[]>(
-    {
-      groupVersionKind: VirtualMachineInstanceModelGroupVersionKind,
-      isList: true,
-      limit: OBJECTS_FETCHING_LIMIT,
-      namespace,
-      namespaced: true,
-    },
-    {
-      ip: 'status.interfaces',
-      'rowFilter-node': 'status.nodeName',
-    },
-  );
-
-  const [isSingleNodeCluster, isSingleNodeLoaded] = useSingleNodeCluster();
-
-  const [vmims, vmimsLoaded] = useKubevirtWatchResource<V1VirtualMachineInstanceMigration[]>({
-    groupVersionKind: VirtualMachineInstanceMigrationModelGroupVersionKind,
-    isList: true,
-    limit: OBJECTS_FETCHING_LIMIT,
-    namespace,
-    namespaced: true,
-  });
-
-  const { filters, searchFilters, vmiMapper, vmimMapper } = useVMListFilters(vmis, vms, vmims);
-
-  const [pagination, setPagination] = useState(paginationInitialState);
-
-  const [unfilterData, dataFilters, onFilterChange] = useListPageFilter<
-    MulticlusterResource<V1VirtualMachine>,
-    MulticlusterResource<V1VirtualMachine>
-  >(vms, [...filters, ...searchFilters]);
-
-  // Allow using folder filters from the tree view
-  useImperativeHandle(
-    ref,
-    () => ({
-      onFilterChange,
-    }),
-    [onFilterChange],
-  );
-
-  const selectedFilters = useSelectedFilters(filters, searchFilters);
-
-  const [unfilteredData, data] = useMemo(() => {
-    if (!featureEnabled || isProxyPodAlive === false) return [unfilterData, dataFilters];
-
-    const matchedVMS = vms?.filter(
-      ({ metadata: { name, namespace: ns }, status: { printableStatus = '' } = {} }) => {
-        return (
-          vmiMapper?.mapper?.[ns]?.[name] ||
-          (!query.has('rowFilter-node') && !query.has('ip') && printableStatus !== 'Running')
-        );
+    const [vms, vmLoaded, loadError] = useKubevirtWatchResource<V1VirtualMachine[]>(
+      {
+        groupVersionKind: VirtualMachineModelGroupVersionKind,
+        isList: true,
+        limit: OBJECTS_FETCHING_LIMIT,
+        namespace,
+        namespaced: true,
+      },
+      {
+        labels: 'metadata.labels',
+        name: 'metadata.name',
+        'rowFilter-instanceType': 'spec.instancetype.name',
+        'rowFilter-live-migratable': 'status.conditions',
+        'rowFilter-os': 'spec.template.metadata.annotations.vm\\.kubevirt\\.io/os',
+        'rowFilter-status': 'status.printableStatus',
+        'rowFilter-template': 'metadata.labels.vm\\.kubevirt\\.io/template',
       },
     );
-    return [matchedVMS, matchedVMS];
-  }, [featureEnabled, isProxyPodAlive, unfilterData, dataFilters, vms, vmiMapper?.mapper, query]);
 
-  const onPageChange = ({ endIndex, page, perPage, startIndex }) => {
-    setPagination(() => ({
-      endIndex,
-      page,
-      perPage,
-      startIndex,
-    }));
-  };
+    const [vmis, vmiLoaded] = useKubevirtWatchResource<V1VirtualMachineInstance[]>(
+      {
+        groupVersionKind: VirtualMachineInstanceModelGroupVersionKind,
+        isList: true,
+        limit: OBJECTS_FETCHING_LIMIT,
+        namespace,
+        namespaced: true,
+      },
+      {
+        ip: 'status.interfaces',
+        'rowFilter-node': 'status.nodeName',
+      },
+    );
 
-  const [columns, activeColumns, loadedColumns] = useVirtualMachineColumns(
-    namespace,
-    pagination,
-    data,
-    vmiMapper,
-  );
+    const [isSingleNodeCluster, isSingleNodeLoaded] = useSingleNodeCluster();
 
-  const loaded =
-    vmLoaded &&
-    vmiLoaded &&
-    vmimsLoaded &&
-    isSingleNodeLoaded &&
-    !loadingFeatureProxy &&
-    loadedColumns;
+    const [vmims, vmimsLoaded] = useKubevirtWatchResource<V1VirtualMachineInstanceMigration[]>({
+      groupVersionKind: VirtualMachineInstanceMigrationModelGroupVersionKind,
+      isList: true,
+      limit: OBJECTS_FETCHING_LIMIT,
+      namespace,
+      namespaced: true,
+    });
 
-  const vmsFilteredWithProxy = isProxyPodAlive && selectedFilters.length > 0;
+    const {
+      vmims: clusterFilteredVmims,
+      vmis: clusterFilteredVmis,
+      vms: clusterFilteredVms,
+    } = useMemo(() => {
+      if (!cluster) {
+        return {
+          vmims,
+          vmis,
+          vms,
+        };
+      }
+      const clusterVms = vms?.filter((vm) => cluster === vm?.cluster);
+      const clusterVmis = vmis?.filter((vmi) => cluster === vmi?.cluster);
+      const clusterVmims = vmims?.filter((vmim) => cluster === vmim?.cluster);
+      return {
+        vmims: clusterVmims,
+        vmis: clusterVmis,
+        vms: clusterVms,
+      };
+    }, [cluster, vmims, vmis, vms]);
 
-  const noVMs = isEmpty(unfilteredData) && !vmsFilteredWithProxy;
+    const { filters, searchFilters, vmiMapper, vmimMapper } = useVMListFilters(
+      clusterFilteredVmis,
+      clusterFilteredVms,
+      clusterFilteredVmims,
+    );
 
-  const allVMsSelected = data?.length === selectedVMs.value.length;
+    const [pagination, setPagination] = useState(paginationInitialState);
 
-  if (loaded && noVMs) {
+    const [unfilterData, dataFilters, onFilterChange] = useListPageFilter<
+      MulticlusterResource<V1VirtualMachine>,
+      MulticlusterResource<V1VirtualMachine>
+    >(clusterFilteredVms, [...filters, ...searchFilters]);
+
+    // Allow using folder filters from the tree view
+    useImperativeHandle(
+      ref,
+      () => ({
+        onFilterChange,
+      }),
+      [onFilterChange],
+    );
+
+    const selectedFilters = useSelectedFilters(filters, searchFilters);
+
+    const [unfilteredData, data] = useMemo(() => {
+      if (!featureEnabled || isProxyPodAlive === false) return [unfilterData, dataFilters];
+
+      const matchedVMS = clusterFilteredVms?.filter(
+        ({ metadata: { name, namespace: ns }, status: { printableStatus = '' } = {} }) => {
+          return (
+            vmiMapper?.mapper?.[ns]?.[name] ||
+            (!query.has('rowFilter-node') && !query.has('ip') && printableStatus !== 'Running')
+          );
+        },
+      );
+      return [matchedVMS, matchedVMS];
+    }, [
+      featureEnabled,
+      isProxyPodAlive,
+      unfilterData,
+      dataFilters,
+      clusterFilteredVms,
+      vmiMapper?.mapper,
+      query,
+    ]);
+
+    const onPageChange = ({ endIndex, page, perPage, startIndex }) => {
+      setPagination(() => ({
+        endIndex,
+        page,
+        perPage,
+        startIndex,
+      }));
+    };
+
+    const [columns, activeColumns, loadedColumns] = useVirtualMachineColumns(
+      namespace,
+      pagination,
+      data,
+      vmiMapper,
+    );
+
+    const loaded =
+      vmLoaded &&
+      vmiLoaded &&
+      vmimsLoaded &&
+      isSingleNodeLoaded &&
+      !loadingFeatureProxy &&
+      loadedColumns;
+
+    const vmsFilteredWithProxy = isProxyPodAlive && selectedFilters.length > 0;
+
+    const noVMs = isEmpty(unfilteredData) && !vmsFilteredWithProxy;
+
+    const allVMsSelected = data?.length === selectedVMs.value.length;
+
+    if (loaded && noVMs) {
+      return (
+        <>
+          <VirtualMachineListSummary
+            namespace={namespace}
+            onFilterChange={onFilterChange}
+            vms={data}
+          />
+          <VirtualMachineEmptyState catalogURL={catalogURL} namespace={namespace} />
+        </>
+      );
+    }
+
     return (
+      /* All of this table and components should be replaced to our own fitted components */
       <>
         <VirtualMachineListSummary
           namespace={namespace}
           onFilterChange={onFilterChange}
           vms={data}
         />
-        <VirtualMachineEmptyState catalogURL={catalogURL} namespace={namespace} />
+        <div className="vm-list-page-header">
+          <ListPageHeader title={t('VirtualMachines')}>
+            <Flex>
+              <FlexItem>
+                <VirtualMachineBulkActionButton vms={data} />
+              </FlexItem>
+              <FlexItem>
+                <VirtualMachinesCreateButton namespace={namespace} />
+              </FlexItem>
+            </Flex>
+          </ListPageHeader>
+        </div>
+        <ListPageBody>
+          <div className="vm-listpagebody">
+            <div className="list-managment-group">
+              <ListPageFilter
+                columnLayout={{
+                  columns: columns?.map(({ additional, id, title }) => ({
+                    additional,
+                    id,
+                    title,
+                  })),
+                  id: VirtualMachineModelRef,
+                  selectedColumns: new Set(activeColumns?.map((col) => col?.id)),
+                  type: t('VirtualMachine'),
+                }}
+                onFilterChange={(...args) => {
+                  onFilterChange(...args);
+                  setPagination((prevPagination) => ({
+                    ...prevPagination,
+                    endIndex: prevPagination?.perPage,
+                    page: 1,
+                    startIndex: 0,
+                  }));
+                }}
+                data={unfilteredData}
+                loaded={loaded}
+                rowFilters={filters}
+                searchFilters={searchFilters}
+              />
+              {!isEmpty(dataFilters) && (
+                <Pagination
+                  onPerPageSelect={(_e, perPage, page, startIndex, endIndex) =>
+                    onPageChange({ endIndex, page, perPage, startIndex })
+                  }
+                  onSetPage={(_e, page, perPage, startIndex, endIndex) =>
+                    onPageChange({ endIndex, page, perPage, startIndex })
+                  }
+                  className="list-managment-group__pagination"
+                  isLastFullPageShown
+                  itemCount={data?.length}
+                  page={pagination?.page}
+                  perPage={pagination?.perPage}
+                  perPageOptions={paginationDefaultValues}
+                />
+              )}
+            </div>
+            <VirtualizedTable<K8sResourceCommon>
+              EmptyMsg={() => (
+                <div className="pf-v5-u-text-align-center">{t('No VirtualMachines found')}</div>
+              )}
+              onSelect={(_, selected, index) => {
+                if (index === -1) allVMsSelected ? deselectAll() : selectAll(data);
+              }}
+              rowData={{
+                getVmi: (ns: string, name: string) => vmiMapper?.mapper?.[ns]?.[name],
+                getVmim: (ns: string, name: string) => vmimMapper?.[ns]?.[name],
+                isSingleNodeCluster,
+                kind,
+              }}
+              allRowsSelected={allVMsSelected}
+              columns={activeColumns}
+              data={data}
+              loaded={loaded}
+              loadError={loadError}
+              Row={VirtualMachineRow}
+              unfilteredData={unfilteredData}
+            />
+          </div>
+        </ListPageBody>
       </>
     );
-  }
-
-  return (
-    /* All of this table and components should be replaced to our own fitted components */
-    <>
-      <VirtualMachineListSummary namespace={namespace} onFilterChange={onFilterChange} vms={data} />
-      <div className="vm-list-page-header">
-        <ListPageHeader title={t('VirtualMachines')}>
-          <Flex>
-            <FlexItem>
-              <VirtualMachineBulkActionButton vms={data} />
-            </FlexItem>
-            <FlexItem>
-              <VirtualMachinesCreateButton namespace={namespace} />
-            </FlexItem>
-          </Flex>
-        </ListPageHeader>
-      </div>
-      <ListPageBody>
-        <div className="vm-listpagebody">
-          <div className="list-managment-group">
-            <ListPageFilter
-              columnLayout={{
-                columns: columns?.map(({ additional, id, title }) => ({
-                  additional,
-                  id,
-                  title,
-                })),
-                id: VirtualMachineModelRef,
-                selectedColumns: new Set(activeColumns?.map((col) => col?.id)),
-                type: t('VirtualMachine'),
-              }}
-              onFilterChange={(...args) => {
-                onFilterChange(...args);
-                setPagination((prevPagination) => ({
-                  ...prevPagination,
-                  endIndex: prevPagination?.perPage,
-                  page: 1,
-                  startIndex: 0,
-                }));
-              }}
-              data={unfilteredData}
-              loaded={loaded}
-              rowFilters={filters}
-              searchFilters={searchFilters}
-            />
-            {!isEmpty(dataFilters) && (
-              <Pagination
-                onPerPageSelect={(_e, perPage, page, startIndex, endIndex) =>
-                  onPageChange({ endIndex, page, perPage, startIndex })
-                }
-                onSetPage={(_e, page, perPage, startIndex, endIndex) =>
-                  onPageChange({ endIndex, page, perPage, startIndex })
-                }
-                className="list-managment-group__pagination"
-                isLastFullPageShown
-                itemCount={data?.length}
-                page={pagination?.page}
-                perPage={pagination?.perPage}
-                perPageOptions={paginationDefaultValues}
-              />
-            )}
-          </div>
-          <VirtualizedTable<K8sResourceCommon>
-            EmptyMsg={() => (
-              <div className="pf-v5-u-text-align-center">{t('No VirtualMachines found')}</div>
-            )}
-            onSelect={(_, selected, index) => {
-              if (index === -1) allVMsSelected ? deselectAll() : selectAll(data);
-            }}
-            rowData={{
-              getVmi: (ns: string, name: string) => vmiMapper?.mapper?.[ns]?.[name],
-              getVmim: (ns: string, name: string) => vmimMapper?.[ns]?.[name],
-              isSingleNodeCluster,
-              kind,
-            }}
-            allRowsSelected={allVMsSelected}
-            columns={activeColumns}
-            data={data}
-            loaded={loaded}
-            loadError={loadError}
-            Row={VirtualMachineRow}
-            unfilteredData={unfilteredData}
-          />
-        </div>
-      </ListPageBody>
-    </>
-  );
-});
+  },
+);
 
 export default VirtualMachinesList;
