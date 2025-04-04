@@ -45,7 +45,7 @@ const groupByCluster = (resources: MulticlusterResource<any>[]) =>
 
 const buildProjectMap = (
   getResourceUrl: GetResourceUrl,
-  vms: MulticlusterResource<V1VirtualMachine>[] | V1VirtualMachine[],
+  vms: MulticlusterResource<V1VirtualMachine>[],
   currentPageVMName: string,
   currentVMTab: string,
   treeViewDataMap: Record<string, TreeViewDataItemWithHref>,
@@ -75,7 +75,7 @@ const buildProjectMap = (
         activeNamespace: vmNamespace,
         model: VirtualMachineModel,
         resource: { metadata: { name: vmName, namespace: vmNamespace } },
-      })}/${currentVMTab}`,
+      })}${currentVMTab ? `/${currentVMTab}` : ''}`,
       icon: <VMStatusIcon />,
       id: vmTreeItemID,
       name: vmName,
