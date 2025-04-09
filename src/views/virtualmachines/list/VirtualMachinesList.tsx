@@ -31,6 +31,7 @@ import {
   paginationInitialState,
 } from '@kubevirt-utils/hooks/usePagination/utils/constants';
 import useSingleNodeCluster from '@kubevirt-utils/hooks/useSingleNodeCluster';
+import { useSupportsMulticluster } from '@kubevirt-utils/hooks/useSupportsMulticluster';
 import { isEmpty } from '@kubevirt-utils/utils/utils';
 import {
   K8sResourceCommon,
@@ -219,6 +220,8 @@ const VirtualMachinesList: FC<VirtualMachinesListProps> = forwardRef(
 
     const allVMsSelected = data?.length === selectedVMs.value.length;
 
+    const supportsMulticluster = useSupportsMulticluster();
+
     if (loaded && noVMs) {
       return (
         <>
@@ -246,9 +249,11 @@ const VirtualMachinesList: FC<VirtualMachinesListProps> = forwardRef(
               <FlexItem>
                 <VirtualMachineBulkActionButton vms={data} />
               </FlexItem>
-              <FlexItem>
-                <VirtualMachinesCreateButton namespace={namespace} />
-              </FlexItem>
+              {!supportsMulticluster && (
+                <FlexItem>
+                  <VirtualMachinesCreateButton namespace={namespace} />
+                </FlexItem>
+              )}
             </Flex>
           </ListPageHeader>
         </div>

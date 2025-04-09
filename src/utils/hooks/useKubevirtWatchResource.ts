@@ -46,7 +46,7 @@ const useKubevirtWatchResource: UseKubevirtWatchResource = <T>(watchOptions, fil
     useKubevirtDataPod<T>(shouldUseProxyPod ? watchOptions : {}, filterOptions);
 
   useEffect(() => {
-    if (supportsMulticluster || shouldUseProxyPod !== null) {
+    if (shouldUseProxyPod !== null) {
       const singleClusterResult = shouldUseProxyPod
         ? [resourceKubevirtDataPod, loadedKubevirtDataPod, loadErrorKubevirtDataPod]
         : [resourceK8sWatch, loadedK8sWatch, loadErrorK8sWatch];

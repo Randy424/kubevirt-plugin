@@ -8,6 +8,7 @@ import {
   ALL_CLUSTERS_SESSION_KEY,
   ALL_NAMESPACES_SESSION_KEY,
   ALL_PROJECTS,
+  LOCAL_CLUSTER,
 } from '@kubevirt-utils/hooks/constants';
 import { getLabel, getName, getNamespace } from '@kubevirt-utils/resources/shared';
 import { GetResourceUrl } from '@kubevirt-utils/utils/getResourceUrl';
@@ -36,20 +37,14 @@ export interface TreeViewDataItemWithHref extends TreeViewDataItem {
   href?: string;
 }
 
-const groupByCluster = (resources: MulticlusterResource<any>[]) =>
-  resources.reduce((acc, resource) => {
-    acc[resource.cluster] = acc[resource.cluster] || [];
-    acc[resource.cluster].push(resource);
-    return acc;
-  }, {});
-
 const buildProjectMap = (
   getResourceUrl: GetResourceUrl,
-  vms: MulticlusterResource<V1VirtualMachine>[] | V1VirtualMachine[],
+  vms: MulticlusterResource<V1VirtualMachine>[],
   currentPageVMName: string,
   currentVMTab: string,
   treeViewDataMap: Record<string, TreeViewDataItemWithHref>,
   foldersEnabled: boolean,
+  supportsMulticluster?: boolean,
 ) => {
   const projectMap: Record<
     string,
@@ -61,10 +56,12 @@ const buildProjectMap = (
   > = {};
 
   vms.forEach((vm) => {
-    const cluster = (vm as MulticlusterResource<V1VirtualMachine>)?.cluster;
+    const cluster = vm.cluster;
     const vmNamespace = getNamespace(vm);
     const vmName = getName(vm);
-    const projectMapIndex = cluster ? `${cluster}/${vmNamespace}` : vmNamespace;
+    const projectMapIndex = supportsMulticluster
+      ? `${cluster}/${vmNamespace}`
+      : `${LOCAL_CLUSTER}/${vmNamespace}`;
     const folder = foldersEnabled ? getLabel(vm, VM_FOLDER_LABEL) : null;
     const vmTreeItemID = `${vmNamespace}/${vmName}`;
     const VMStatusIcon = statusIcon[vm?.status?.printableStatus];
@@ -75,7 +72,7 @@ const buildProjectMap = (
         activeNamespace: vmNamespace,
         model: VirtualMachineModel,
         resource: { metadata: { name: vmName, namespace: vmNamespace } },
-      })}/${currentVMTab}`,
+      })}${currentVMTab ? `/${currentVMTab}` : ''}`,
       icon: <VMStatusIcon />,
       id: vmTreeItemID,
       name: vmName,
@@ -143,22 +140,27 @@ const createProjectTreeItem = (
   currentPageNamespace: string,
   treeViewDataMap: Record<string, TreeViewDataItemWithHref>,
   clusterName?: string,
+  supportsMulticluster?: boolean,
 ): TreeViewDataItemWithHref => {
+  const projectMapIndex = supportsMulticluster
+    ? `${clusterName}/${project}`
+    : `${LOCAL_CLUSTER}/${project}`;
+
   const projectFolders = createFolderTreeItems(
     getResourceUrl,
-    projectMap[project]?.folders || {},
+    projectMap[projectMapIndex]?.folders || {},
     project,
     currentPageVMName,
     treeViewDataMap,
   );
 
-  const projectChildren = [...projectFolders, ...(projectMap[project]?.ungrouped || [])];
-  const projectTreeItemID = clusterName
+  const projectChildren = [...projectFolders, ...(projectMap[projectMapIndex]?.ungrouped || [])];
+  const projectTreeItemID = supportsMulticluster
     ? `${PROJECT_SELECTOR_PREFIX}/${clusterName}/${project}`
     : `${PROJECT_SELECTOR_PREFIX}/${project}`;
   const projectTreeItem: TreeViewDataItemWithHref = {
     children: projectChildren,
-    customBadgeContent: projectMap[project]?.count || 0,
+    customBadgeContent: projectMap[projectMapIndex]?.count || 0,
     defaultExpanded: currentPageNamespace === project,
     href: getResourceUrl({
       activeNamespace: project,
@@ -183,8 +185,9 @@ const createClusterLevelTreeItem = (
   projectMap: Record<string, any>,
   clusterName?: string,
 ): TreeViewDataItemWithHref => {
-  const allVMsCount = Object.keys(projectMap).reduce((acc, ns) => {
-    acc += projectMap[ns]?.count;
+  const allVMsCount = Object.keys(projectMap).reduce((acc, projectMapId) => {
+    const cluster = projectMapId.split('/')[0];
+    if (clusterName === cluster) acc += projectMap[projectMapId]?.count;
     return acc;
   }, 0);
   const href = `${getResourceUrl({ model: VirtualMachineModel })}/${clusterName}`;
@@ -249,64 +252,54 @@ const getVMInfoFromPathname = (pathname: string) => {
 };
 
 const createClusterTreeViewData = (
-  getResourceUrl: GetResourceUrl,
-  projectNames: string[],
-  vms: V1VirtualMachine[],
-  isAdmin: boolean,
+  getResourceUrlOverride: (cluster?: string) => GetResourceUrl,
+  projectNames: MulticlusterResource<K8sResourceCommon>[],
   pathname: string,
   treeViewDataMap: Record<string, TreeViewDataItem> = {},
   clusterProjectMap: Record<string, any> = {},
   clusterName?: string,
+  supportsMulticluster?: boolean,
 ): TreeViewDataItem[] => {
   const { vmName, vmNamespace } = getVMInfoFromPathname(pathname);
+  const getResourceUrl = getResourceUrlOverride(clusterName);
 
-  const projectMap = {};
+  let clusterProjects = [];
+  if (supportsMulticluster) {
+    clusterProjects = projectNames
+      .filter((project) => {
+        const projectClusterName = project?.cluster;
+        return projectClusterName === clusterName;
+      })
+      .map((project) => getName(project));
+  } else {
+    clusterProjects = projectNames.map((project) => getName(project));
+  }
 
-  // assumes cluster name will always be unique
-  Object.keys(clusterProjectMap).forEach((key) => {
-    if (!clusterName) {
-      const mappedProjectName = key;
-      projectMap[mappedProjectName] = clusterProjectMap[key];
-    } else {
-      const [mappedClusterName, mappedProjectName] = key.split('/');
-      if (clusterName == mappedClusterName) {
-        projectMap[mappedProjectName] = clusterProjectMap[key];
-      }
-    }
-  });
-
-  const treeViewData = projectNames.map((project) =>
+  const treeViewData = clusterProjects.map((project) =>
     createProjectTreeItem(
       getResourceUrl,
       project,
-      projectMap,
+      clusterProjectMap,
       vmName,
       vmNamespace,
       treeViewDataMap,
       clusterName,
+      supportsMulticluster,
     ),
   );
 
-  if (clusterName) {
+  if (supportsMulticluster) {
     return [
       createClusterLevelTreeItem(
         getResourceUrl,
         treeViewData,
         treeViewDataMap,
-        projectMap,
+        clusterProjectMap,
         clusterName,
       ),
     ];
   } else {
-    const allNamespacesTreeItem = isAdmin
-      ? createAllNodesTreeItem(getResourceUrl, treeViewData, treeViewDataMap, projectMap)
-      : null;
-
-    treeDataMap.value = treeViewDataMap;
-
-    const tree = allNamespacesTreeItem ? [allNamespacesTreeItem] : treeViewData;
-
-    return tree;
+    return treeViewData;
   }
 };
 
@@ -315,86 +308,54 @@ export const createTreeViewData = (
   isAdmin: boolean,
   pathname: string,
   foldersEnabled: boolean,
-  projectNames?: MulticlusterResource<K8sResourceCommon>[] | string[],
+  projectNames?: MulticlusterResource<K8sResourceCommon>[],
   vms?: MulticlusterResource<V1VirtualMachine>[] | V1VirtualMachine[],
   supportsMulticluster?: boolean,
 ): TreeViewDataItem[] => {
   const { currentVMTab, vmName } = getVMInfoFromPathname(pathname);
   const treeViewDataMap: Record<string, TreeViewDataItem> = {};
+  const clusterTreeItems: TreeViewDataItem[] = [];
+  const defaultGetResourceUrl = getResourceUrlMultiClusterOverride();
+  const clusters = [...new Set(vms.map((vm) => vm?.cluster || LOCAL_CLUSTER))];
 
-  // Build the project map
   const projectMap = buildProjectMap(
-    getResourceUrlMultiClusterOverride(),
+    defaultGetResourceUrl,
     vms,
     vmName,
     currentVMTab,
     treeViewDataMap,
     foldersEnabled,
+    supportsMulticluster,
   );
 
-  if (supportsMulticluster) {
-    return createMultiClusterTreeViewData(
-      getResourceUrlMultiClusterOverride,
-      projectNames as MulticlusterResource<K8sResourceCommon>[],
-      vms as MulticlusterResource<V1VirtualMachine>[],
-      isAdmin,
-      pathname,
-      treeViewDataMap,
-      projectMap,
-    );
-  }
-
-  return createClusterTreeViewData(
-    getResourceUrlMultiClusterOverride(),
-    projectNames as string[],
-    vms as V1VirtualMachine[],
-    isAdmin,
-    pathname,
-    treeViewDataMap,
-    projectMap,
-  );
-};
-
-const createMultiClusterTreeViewData = (
-  getResourceUrlMultiClusterOverride: (cluster?: string) => GetResourceUrl,
-  projectNames: MulticlusterResource<K8sResourceCommon>[],
-  vms: MulticlusterResource<V1VirtualMachine>[],
-  isAdmin: boolean,
-  pathname: string,
-  treeViewDataMap: Record<string, TreeViewDataItem>,
-  projectMap: Record<string, any>,
-): TreeViewDataItem[] => {
-  const clusterTreeItems: TreeViewDataItem[] = [];
-  const multiclusterVmsRecord = groupByCluster(vms);
-  const namespaceNameByClusterRecord = groupByCluster(projectNames);
-
-  Object.keys(multiclusterVmsRecord).forEach((clusterName) => {
-    const namespaceNames = namespaceNameByClusterRecord[clusterName].map(getName);
-    const clusterVms = multiclusterVmsRecord[clusterName];
-
+  clusters.forEach((cluster) => {
     clusterTreeItems.push(
       ...createClusterTreeViewData(
-        getResourceUrlMultiClusterOverride(clusterName),
-        namespaceNames,
-        clusterVms,
-        isAdmin,
+        getResourceUrlMultiClusterOverride,
+        projectNames,
         pathname,
         treeViewDataMap,
         projectMap,
-        clusterName,
+        cluster,
+        supportsMulticluster,
       ),
     );
   });
 
-  return [
-    createAllNodesTreeItem(
-      getResourceUrlMultiClusterOverride(),
-      clusterTreeItems,
-      treeViewDataMap,
-      projectMap,
-      true,
-    ),
-  ];
+  const tree =
+    isAdmin || supportsMulticluster
+      ? [
+          createAllNodesTreeItem(
+            getResourceUrlMultiClusterOverride(),
+            clusterTreeItems,
+            treeViewDataMap,
+            projectMap,
+            supportsMulticluster,
+          ),
+        ]
+      : clusterTreeItems;
+
+  return tree;
 };
 
 export const filterItems = (item: TreeViewDataItem, input: string) => {
