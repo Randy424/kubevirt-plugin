@@ -43,7 +43,7 @@ export const useTreeViewData = (): UseTreeViewData => {
     isList: true,
     limit: OBJECTS_FETCHING_LIMIT,
   });
-  debugger;
+
   // when using multicluster we don't have to worry about this because search api will return all namespaces
   // user has limited access, so we can only get vms from allowed namespaces
   const allowedResources = useK8sWatchResources<{ [key: string]: V1VirtualMachine[] }>(
