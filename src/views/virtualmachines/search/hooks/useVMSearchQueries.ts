@@ -5,8 +5,8 @@ import { STATIC_SEARCH_FILTERS } from '@kubevirt-utils/components/ListPageFilter
 import { VirtualMachineRowFilterType } from '@virtualmachines/utils';
 
 export type VMSearchQueries = {
-  vmiQueries: { [key: string]: string };
-  vmQueries: { [key: string]: string };
+  vmiQueries: { property: string; values: string[] }[];
+  vmQueries: { property: string; values: string[] }[];
 };
 
 const useVMSearchQueries = (): VMSearchQueries => {
@@ -16,27 +16,36 @@ const useVMSearchQueries = (): VMSearchQueries => {
 
   const ip = searchParams.get(VirtualMachineRowFilterType.IP);
   const project = searchParams.get(VirtualMachineRowFilterType.Project);
+  const createdFrom = searchParams.get(VirtualMachineRowFilterType.DateCreatedFrom);
+  const createdTo = searchParams.get(VirtualMachineRowFilterType.DateCreatedTo);
 
   return useMemo(() => {
     const queries: VMSearchQueries = {
-      vmiQueries: {},
-      vmQueries: {},
+      vmiQueries: [],
+      vmQueries: [],
     };
 
-    if (vmName) {
-      queries.vmQueries.name = `*${vmName}*`;
-      queries.vmiQueries.name = `*${vmName}*`;
+    if (createdFrom) {
+      queries.vmQueries.push({ property: 'created', values: [`>=${createdFrom}`] });
+    }
+    if (createdTo) {
+      queries.vmQueries.push({ property: 'created', values: [`<=${createdTo}`] });
     }
 
-    if (ip) queries.vmiQueries.ipaddress = `*${ip}*`;
+    if (vmName) {
+      queries.vmQueries.push({ property: 'name', values: [`*${vmName}*`] });
+      queries.vmiQueries.push({ property: 'name', values: [`*${vmName}*`] });
+    }
+
+    if (ip) queries.vmiQueries.push({ property: 'ipaddress', values: [`*${ip}*`] });
 
     if (project) {
-      queries.vmQueries.project = project;
-      queries.vmiQueries.project = project;
+      queries.vmQueries.push({ property: 'namespace', values: project.split(',') });
+      queries.vmiQueries.push({ property: 'namespace', values: project.split(',') });
     }
 
     return queries;
-  }, [vmName, ip, project]);
+  }, [createdFrom, createdTo, vmName, ip, project]);
 };
 
 export default useVMSearchQueries;
