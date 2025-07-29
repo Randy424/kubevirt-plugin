@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
 import { K8sResourceCommon, WatchK8sResource } from '@openshift-console/dynamic-plugin-sdk';
-import { AdvancedSearchFilter } from '@stolostron/multicluster-sdk/lib/api/search/types';
+import { AdvancedSearchFilter } from '@stolostron/multicluster-sdk/lib/types';
 
 import { KUBEVIRT_APISERVER_PROXY } from '../useFeatures/constants';
 import { useFeatures } from '../useFeatures/useFeatures';
@@ -32,7 +32,22 @@ const useKubevirtWatchResource: UseKubevirtWatchResource = <T>(
     return null;
   }, [featureEnabled, loading, isProxyPodAlive, watchOptions?.cluster]);
 
-  return useRedirectWatchHooks<T>(watchOptions, filterOptions, searchQueries, shouldUseProxyPod);
+  // Ensure the return type is always Result<T> (tuple of 3 elements)
+  const result = useRedirectWatchHooks<T>(
+    watchOptions,
+    filterOptions,
+    searchQueries,
+    shouldUseProxyPod,
+  );
+
+  // If result is an array of length 4 (FleetPollingResult), drop the 4th element
+  if (Array.isArray(result) && result.length === 4) {
+    const [data, loaded, error] = result;
+    return [data, loaded, error] as Result<T>;
+  }
+
+  // Otherwise, assume it's already Result<T>
+  return result as Result<T>;
 };
 
 export default useKubevirtWatchResource;
